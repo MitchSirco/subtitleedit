@@ -605,9 +605,17 @@ namespace Nikse.SubtitleEdit.Forms.AudioToText
             }
         }
 
+        private void EnableGroupBoxInputFiles(bool enabled)
+        {
+
+            buttonAddFile.Enabled = enabled;
+            buttonRemoveFile.Enabled = enabled;
+            buttonClear.Enabled = enabled;
+        }
+
         private void GenerateBatch()
         {
-            groupBoxInputFiles.Enabled = false;
+            EnableGroupBoxInputFiles(false);
             _batchFileNumber = 0;
             var errors = new StringBuilder();
             var errorCount = 0;
@@ -618,6 +626,7 @@ namespace Nikse.SubtitleEdit.Forms.AudioToText
                 var videoFileName = lvi.Text;
                 listViewInputFiles.SelectedIndices.Clear();
                 lvi.Selected = true;
+                lvi.EnsureVisible();
                 buttonGenerate.Enabled = false;
                 buttonDownload.Enabled = false;
                 buttonBatchMode.Enabled = false;
@@ -652,7 +661,7 @@ namespace Nikse.SubtitleEdit.Forms.AudioToText
                         DialogResult = DialogResult.Cancel;
                     }
 
-                    groupBoxInputFiles.Enabled = true;
+                    EnableGroupBoxInputFiles(true);
                     return;
                 }
 
@@ -704,7 +713,7 @@ namespace Nikse.SubtitleEdit.Forms.AudioToText
             var fileList = Environment.NewLine + Environment.NewLine + string.Join(Environment.NewLine, _outputBatchFileNames);
             MessageBox.Show(this, string.Format(LanguageSettings.Current.AudioToText.XFilesSavedToVideoSourceFolder, listViewInputFiles.Items.Count - errorCount) + fileList, Text, MessageBoxButtons.OK);
 
-            groupBoxInputFiles.Enabled = true;
+            EnableGroupBoxInputFiles(true);
             buttonGenerate.Enabled = true;
             buttonDownload.Enabled = true;
             buttonBatchMode.Enabled = true;
@@ -834,7 +843,7 @@ namespace Nikse.SubtitleEdit.Forms.AudioToText
                 var dir = Path.GetDirectoryName(fileName);
                 if (!FileUtil.IsDirectoryWritable(dir))
                 {
-                    MessageBox.Show($"SE does not have write access to the folder '{dir}'", MessageBoxIcon.Error);
+                    MessageBox.Show(this, $"SE does not have write access to the folder '{dir}'", MessageBoxIcon.Error);
                 }
 
                 throw;
@@ -1685,7 +1694,7 @@ namespace Nikse.SubtitleEdit.Forms.AudioToText
         {
             if (_batchMode)
             {
-                groupBoxInputFiles.Enabled = true;
+                EnableGroupBoxInputFiles(true);
                 Height = checkBoxUsePostProcessing.Bottom + progressBar1.Height + buttonCancel.Height + 470;
                 listViewInputFiles.Visible = true;
                 buttonBatchMode.Text = LanguageSettings.Current.Split.Basic;
@@ -1696,7 +1705,7 @@ namespace Nikse.SubtitleEdit.Forms.AudioToText
             }
             else
             {
-                groupBoxInputFiles.Enabled = false;
+                EnableGroupBoxInputFiles(false);
                 var h = checkBoxUsePostProcessing.Bottom + progressBar1.Height + buttonCancel.Height + 110;
                 MinimumSize = new Size(MinimumSize.Width, h - 10);
                 Height = h;
@@ -1724,6 +1733,8 @@ namespace Nikse.SubtitleEdit.Forms.AudioToText
             {
                 CheckIfInstalledAndVersion(Configuration.Settings.Tools.WhisperChoice);
             });
+
+            AudioToText_ResizeEnd(null, null);
         }
 
         private bool _checkedInstalledAndVersion;
@@ -1880,7 +1891,7 @@ namespace Nikse.SubtitleEdit.Forms.AudioToText
 
         private void listViewInputFiles_DragEnter(object sender, DragEventArgs e)
         {
-            if (!buttonGenerate.Visible)
+            if (!buttonGenerate.Visible || buttonAddFile.Enabled == false)
             {
                 e.Effect = DragDropEffects.None;
                 return;
@@ -1928,10 +1939,16 @@ namespace Nikse.SubtitleEdit.Forms.AudioToText
         private void AudioToText_ResizeEnd(object sender, EventArgs e)
         {
             listViewInputFiles.AutoSizeLastColumn();
+            labelElapsed.Left = progressBar1.Width - labelElapsed.Width + 10;
         }
 
         private void listViewInputFiles_KeyDown(object sender, KeyEventArgs e)
         {
+            if (buttonAddFile.Enabled == false)
+            {
+                return;
+            }
+
             if (e.KeyCode == Keys.V && e.Modifiers == Keys.Control) //Ctrl+V = Paste from clipboard
             {
                 e.SuppressKeyPress = true;
@@ -1994,7 +2011,7 @@ namespace Nikse.SubtitleEdit.Forms.AudioToText
                     }
                 }
 
-                comboBox.Items.AddRange(languagesToAdd.OrderBy(p => p.Name).ToArray<object>());
+                comboBox.Items.AddItems(languagesToAdd.OrderBy(p => p.Name));
 
                 var lang = languages.FirstOrDefault(p => p.Code == Configuration.Settings.Tools.WhisperLanguageCode);
                 comboBox.Text = lang != null ? lang.ToString() : "English";
@@ -2002,7 +2019,7 @@ namespace Nikse.SubtitleEdit.Forms.AudioToText
 
             if (!languagesFilled)
             {
-                comboBox.Items.AddRange(WhisperLanguage.Languages.OrderBy(p => p.Name).ToArray<object>());
+                comboBox.Items.AddItems(WhisperLanguage.Languages.OrderBy(p => p.Name));
                 var lang = WhisperLanguage.Languages.FirstOrDefault(p => p.Code == Configuration.Settings.Tools.WhisperLanguageCode);
                 comboBox.Text = lang != null ? lang.ToString() : "English";
             }

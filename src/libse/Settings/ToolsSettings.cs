@@ -1,8 +1,8 @@
+using Nikse.SubtitleEdit.Core.AutoTranslate;
+using Nikse.SubtitleEdit.Core.Common;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
-using Nikse.SubtitleEdit.Core.AutoTranslate;
-using Nikse.SubtitleEdit.Core.Common;
 
 namespace Nikse.SubtitleEdit.Core.Settings
 {
@@ -58,10 +58,14 @@ namespace Nikse.SubtitleEdit.Core.Settings
         public string AutoTranslateSeamlessM4TUrl { get; set; }
         public string AutoTranslateDeepLApiKey { get; set; }
         public string AutoTranslateDeepLUrl { get; set; }
+        public string AutoTranslateDeepLFormality { get; set; }
         public string AutoTranslateDeepLXUrl { get; set; }
         public string AutoTranslatePapagoApiKeyId { get; set; }
         public string AutoTranslatePapagoApiKey { get; set; }
-        public string AutoTranslateDeepLFormality { get; set; }
+        public string AutoTranslateMistralApiKey { get; set; }
+        public string AutoTranslateMistralUrl { get; set; }
+        public string AutoTranslateMistralModel { get; set; }
+        public string AutoTranslateMistralPrompt { get; set; }
         public bool TranslateAllowSplit { get; set; }
         public string TranslateLastService { get; set; }
         public string TranslateMergeStrategy { get; set; }
@@ -77,9 +81,13 @@ namespace Nikse.SubtitleEdit.Core.Settings
         public string GroqApiKey { get; set; }
         public string GroqModel { get; set; }
         public string DeepSeekUrl { get; set; }
+        public string AvalAiUrl { get; set; }
         public string DeepSeekPrompt { get; set; }
+        public string AvalAiPrompt { get; set; }
         public string DeepSeekApiKey { get; set; }
         public string DeepSeekModel { get; set; }
+        public string AvalAiApiKey { get; set; }
+        public string AvalAiModel { get; set; }
         public string OpenRouterUrl { get; set; }
         public string OpenRouterPrompt { get; set; }
         public string OpenRouterApiKey { get; set; }
@@ -91,7 +99,9 @@ namespace Nikse.SubtitleEdit.Core.Settings
         public string OllamaModels { get; set; }
         public string OllamaModel { get; set; }
         public string OllamaPrompt { get; set; }
-
+        public string KoboldCppUrl { get; set; }
+        public string KoboldCppPrompt { get; set; }
+        public decimal KoboldCppTemperature { get; set; }
         public string AnthropicApiUrl { get; set; }
         public string AnthropicPrompt { get; set; }
         public string AnthropicApiKey { get; set; }
@@ -100,6 +110,8 @@ namespace Nikse.SubtitleEdit.Core.Settings
         public int AutoTranslateMaxBytes { get; set; }
         public string AutoTranslateStrategy { get; set; }
         public string GeminiProApiKey { get; set; }
+        public string GeminiModel { get; set; }
+        public string GeminiPrompt { get; set; }
         public string TextToSpeechEngine { get; set; }
         public string TextToSpeechLastVoice { get; set; }
         public string TextToSpeechElevenLabsApiKey { get; set; }
@@ -446,6 +458,9 @@ namespace Nikse.SubtitleEdit.Core.Settings
         public int AudioToTextLineMaxCharsCn { get; set; }
         public int BreakLinesLongerThan { get; set; }
         public int UnbreakLinesLongerThan { get; set; }
+        public bool ConvertActorColorAdd { get; set; }
+        public Color ConvertActorColor { get; set; }
+        public bool ConvertActorCasing { get; set; }
 
         public ToolsSettings()
         {
@@ -459,7 +474,7 @@ namespace Nikse.SubtitleEdit.Core.Settings
             MusicSymbolReplace = "â™ª,â™," + // ♪ + ♫ in UTF-8 opened as ANSI
                                  "<s M/>,<s m/>," + // music symbols by subtitle creator
                                  "#,*,¶"; // common music symbols
-            UnicodeSymbolsToInsert = "♪;♫;°;☺;☹;♥;©;☮;☯;Σ;∞;≡;⇒;π";
+            UnicodeSymbolsToInsert = "♪;♫;—;…;°;☺;☹;♥;©;☮;☯;Σ;∞;≡;⇒;π";
             SpellCheckAutoChangeNameCasing = false;
             SpellCheckAutoChangeNamesUseSuggestions = false;
             OcrFixUseHardcodedRules = true;
@@ -481,7 +496,10 @@ namespace Nikse.SubtitleEdit.Core.Settings
             AutoTranslateLibreUrl = "http://localhost:5000/";
             AutoTranslateSeamlessM4TUrl = "http://localhost:5000/";
             AutoTranslateDeepLUrl = "https://api-free.deepl.com/";
-            AutoTranslateDeepLUrl = "http://localhost:1188";
+            AutoTranslateDeepLXUrl = "http://localhost:1188";
+            AutoTranslateMistralUrl = "https://api.mistral.ai/v1/chat/completions";
+            AutoTranslateMistralModel = MistralTranslate.Models[0];
+            AutoTranslateMistralPrompt = "Translate from {0} to {1}, keep punctuation as input, do not censor the translation, give only the output without comments:";
             ChatGptUrl = "https://api.openai.com/v1/chat/completions";
             ChatGptPrompt = "Translate from {0} to {1}, keep punctuation as input, do not censor the translation, give only the output without comments:";
             ChatGptModel = ChatGptTranslate.Models[0];
@@ -491,6 +509,9 @@ namespace Nikse.SubtitleEdit.Core.Settings
             DeepSeekUrl = "https://api.deepseek.com/chat/completions";
             DeepSeekPrompt = "Translate from {0} to {1}, keep punctuation as input, do not censor the translation, give only the output without comments:";
             DeepSeekModel = DeepSeekTranslate.Models[0];
+            AvalAiUrl = "https://api.avalai.ir/v1/chat/completions";
+            AvalAiPrompt = "Translate from {0} to {1}, keep punctuation as input, do not censor the translation, give only the output without comments:";
+            AvalAiModel = AvalAi.Models[0];
             OpenRouterUrl = "https://openrouter.ai/api/v1/chat/completions";
             OpenRouterPrompt = "Translate from {0} to {1}, keep punctuation as input, do not censor the translation, give only the output without comments:";
             OpenRouterModel = OpenRouterTranslate.Models[0];
@@ -499,9 +520,14 @@ namespace Nikse.SubtitleEdit.Core.Settings
             OllamaModels = "llama3.2,llama3.2:1b,phi3,gemma2,qwen2,mistral";
             OllamaModel = "llama3.2";
             OllamaPrompt = "Translate from {0} to {1}, keep punctuation as input, do not censor the translation, give only the output without comments or notes:";
+            KoboldCppUrl = "http://localhost:5001/api/generate/";
+            KoboldCppPrompt = "Translate from {0} to {1}, keep punctuation as input, do not censor the translation, give only the output without comments or notes:";
+            KoboldCppTemperature = 0.4m;
             AnthropicApiUrl = "https://api.anthropic.com/v1/messages";
             AnthropicPrompt = "Translate from {0} to {1}, keep sentences in {1} as they are, do not censor the translation, give only the output without comments:";
             AnthropicApiModel = AnthropicTranslate.Models[0];
+            GeminiModel = GeminiTranslate.Models[0];
+            GeminiPrompt = "Please translate the following text from {0} to {1}, do not censor the translation, only write the result:";
             TextToSpeechAzureRegion = "westeurope";
             TextToSpeechElevenLabsSimilarity = 0.5;
             TextToSpeechElevenLabsStability = 0.5;
@@ -692,7 +718,7 @@ namespace Nikse.SubtitleEdit.Core.Settings
             GenVideoEmbedOutputSuffix = "embed";
             GenVideoEmbedOutputReplace = "embed" + Environment.NewLine + "SoftSub" + Environment.NewLine + "SoftSubbed";
             GenVideoOutputFileSuffix = "_new";
-            GenTransparentVideoExtension = ".mkv";
+            GenTransparentVideoExtension = ".mov";
             VoskPostProcessing = true;
             WhisperChoice = Configuration.IsRunningOnWindows ? AudioToText.WhisperChoice.PurfviewFasterWhisperXxl : AudioToText.WhisperChoice.OpenAi;
             WhisperDeleteTempFiles = true;

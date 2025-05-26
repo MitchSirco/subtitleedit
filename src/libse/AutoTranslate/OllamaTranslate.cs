@@ -12,7 +12,7 @@ using Nikse.SubtitleEdit.Core.Settings;
 
 namespace Nikse.SubtitleEdit.Core.AutoTranslate
 {
-    public class OllamaTranslate : IAutoTranslator
+    public class OllamaTranslate : IAutoTranslator, IDisposable
     {
         private HttpClient _httpClient;
 
@@ -87,7 +87,13 @@ namespace Nikse.SubtitleEdit.Core.AutoTranslate
 
             outputText = ChatGptTranslate.FixNewLines(outputText);
             outputText = ChatGptTranslate.RemovePreamble(text, outputText);
+            outputText = ChatGptTranslate.DecodeUnicodeEscapes(outputText);
             return outputText.Trim();
+        }
+
+        public void Dispose()
+        {
+            _httpClient?.Dispose();
         }
     }
 }

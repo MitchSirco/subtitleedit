@@ -2,8 +2,8 @@
 <Language Name="Italiano">
   <General>
     <Title>Subtitle Edit</Title>
-    <Version>4.0.11</Version>
-    <TranslatedBy>Tradotto da NAMP e bovirus - Data traduzione: 16.01.2025</TranslatedBy>
+    <Version>4.0.12</Version>
+    <TranslatedBy>Tradotto da NAMP e bovirus - Data traduzione: 17.04.2025</TranslatedBy>
     <CultureName>it-IT</CultureName>
     <HelpFile />
     <Ok>OK</Ok>
@@ -607,6 +607,15 @@ Si sfrutta così il ritmo intrinseco dell'immagine.</CreateSimpleChainingToolTip
     <OnlyLookForDifferencesInText>Cerca solo le differenze nel testo</OnlyLookForDifferencesInText>
     <CannotCompareWithImageBasedSubtitles>Impossibile confrontare sottotitoli basati su immagini</CannotCompareWithImageBasedSubtitles>
   </CompareSubtitles>
+  <ConvertActor>
+    <Title>Converti attori</Title>
+    <ConvertActorFrom>Modifica attore da</ConvertActorFrom>
+    <ConvertActorTo>Modifica attore in</ConvertActorTo>
+    <InlineActorViaX>Attore in linea via {0}</InlineActorViaX>
+    <NumberOfConversionsX>Numero conversioni attore: {0}</NumberOfConversionsX>
+    <SetColor>Imposta colore</SetColor>
+    <OnlyNames>Solo nomi</OnlyNames>
+  </ConvertActor>
   <ConvertColorsToDialog>
     <Title>Converti i colori in dialogo</Title>
     <RemoveColorTags>Rimuovi i tag colore</RemoveColorTags>
@@ -1403,6 +1412,7 @@ Si sfrutta così il ritmo intrinseco dell'immagine.</CreateSimpleChainingToolTip
         <StartNumberingFrom>Inizia numerazione da...</StartNumberingFrom>
         <RemoveTextForHearingImpaired>Elimina testo per non udenti...</RemoveTextForHearingImpaired>
         <ConvertColorsToDialog>Converti i colori in dialogo...</ConvertColorsToDialog>
+        <ConvertActors>Converti attori...</ConvertActors>
         <ChangeCasing>Cambia MAIUSCOLE/minuscole...</ChangeCasing>
         <ChangeFrameRate>Cambia frequenza fotogramma...</ChangeFrameRate>
         <ChangeSpeedInPercent>Cambia velocità in percentuale...</ChangeSpeedInPercent>
@@ -2478,6 +2488,9 @@ stesso file di sottotitolo (collaborazione)</Information>
     <SpectrogramAppearance>Apparenza spettrogramma</SpectrogramAppearance>
     <SpectrogramOneColorGradient>Sfumatura di colore</SpectrogramOneColorGradient>
     <SpectrogramClassic>Classico</SpectrogramClassic>
+    <SpectrogramHeat>Calore</SpectrogramHeat>
+    <SpectrogramCyanToOrange>Da ciano a arancione</SpectrogramCyanToOrange>
+    <SpectrogramWaveformOpacity>Opacità spettrogramma/forma d'onda:</SpectrogramWaveformOpacity>
     <WaveformUseFFmpeg>Usa FFMPEG per l'estrazione dell'audio</WaveformUseFFmpeg>
     <WaveformUseCenterChannelOnly>Usa solo il canale centrale anteriore (per 5.1/7.1)</WaveformUseCenterChannelOnly>
     <DownloadFFmpeg>Download FFmpeg</DownloadFFmpeg>
@@ -3190,6 +3203,7 @@ Vuoi continuare?</RestoreDefaultSettingsMsg>
     <MergingAudioTrackXOfY>Unione traccia audio: {0} / {1}...</MergingAudioTrackXOfY>
     <GeneratingSpeechFromTextXOfY>Generazione parlato dal testo: {0} / {1}...</GeneratingSpeechFromTextXOfY>
     <ReviewAudioClips>Rivedi clip audio</ReviewAudioClips>
+    <UseVoiceOver>Usa voce fuori campo</UseVoiceOver>
     <CustomAudioEncoding>Codifica audio personalizzata</CustomAudioEncoding>
     <ReviewInfo>Rivedi e modifica/rimuovi clip audio</ReviewInfo>
     <Play>Riproduci</Play>

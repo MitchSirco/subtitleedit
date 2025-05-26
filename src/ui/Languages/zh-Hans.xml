@@ -2,7 +2,7 @@
 <Language Name="中文(简体)">
   <General>
     <Title>Subtitle Edit</Title>
-    <Version>4.0.11</Version>
+    <Version>4.0.12</Version>
     <TranslatedBy>翻译: FeiXJ | Leon Cheung | larsenlouis | VK | nkh0472</TranslatedBy>
     <CultureName>zh-Hans</CultureName>
     <HelpFile>https://www.nikse.dk/SubtitleEdit/Help</HelpFile>
@@ -604,6 +604,15 @@ Command line: {1} {2}
     <OnlyLookForDifferencesInText>仅查找差异文本</OnlyLookForDifferencesInText>
     <CannotCompareWithImageBasedSubtitles>无法比较基于图像的字幕</CannotCompareWithImageBasedSubtitles>
   </CompareSubtitles>
+  <ConvertActor>
+    <Title>转换演员</Title>
+    <ConvertActorFrom>更改演员从</ConvertActorFrom>
+    <ConvertActorTo>更改演员为</ConvertActorTo>
+    <InlineActorViaX>内联演员通过{0}</InlineActorViaX>
+    <NumberOfConversionsX>演员转换的数量：{0}</NumberOfConversionsX>
+    <SetColor>设置颜色</SetColor>
+    <OnlyNames>仅名称</OnlyNames>
+  </ConvertActor>
   <ConvertColorsToDialog>
     <Title>将颜色转换为对话框</Title>
     <RemoveColorTags>去除颜色标签</RemoveColorTags>
@@ -1399,6 +1408,7 @@ Command line: {1} {2}
         <StartNumberingFrom>编号起始位置...</StartNumberingFrom>
         <RemoveTextForHearingImpaired>删除听障辅助文本...</RemoveTextForHearingImpaired>
         <ConvertColorsToDialog>将颜色转换为对话框...</ConvertColorsToDialog>
+        <ConvertActors>转换演员...</ConvertActors>
         <ChangeCasing>更改大小写...</ChangeCasing>
         <ChangeFrameRate>更改帧率...</ChangeFrameRate>
         <ChangeSpeedInPercent>更改速度 (百分比)...</ChangeSpeedInPercent>
@@ -2342,7 +2352,7 @@ Command line: {1} {2}
     <DuplicateLine>创建副本行</DuplicateLine>
     <ToggleView>切换表格/源视图</ToggleView>
     <ToggleMode>切换翻译/创建/调整模式</ToggleMode>
-    <TogglePreviewOnVideo>切换视频预览</TogglePreviewOnVideo>
+    <TogglePreviewOnVideo>切换字幕预览方式</TogglePreviewOnVideo>
     <Help>帮助</Help>
     <FontInUi>用户界面字体</FontInUi>
     <Appearance>外观</Appearance>
@@ -2467,6 +2477,9 @@ Command line: {1} {2}
     <SpectrogramAppearance>频谱图外观</SpectrogramAppearance>
     <SpectrogramOneColorGradient>单色梯度</SpectrogramOneColorGradient>
     <SpectrogramClassic>经典</SpectrogramClassic>
+    <SpectrogramHeat>热力图</SpectrogramHeat>
+    <SpectrogramCyanToOrange>青色到橙色</SpectrogramCyanToOrange>
+    <SpectrogramWaveformOpacity>频谱/波形图透明度:</SpectrogramWaveformOpacity>
     <WaveformUseFFmpeg>使用 FFmpeg 提取波形</WaveformUseFFmpeg>
     <WaveformUseCenterChannelOnly>仅使用前置/中置声道（适用于 5.1/7.1声道）</WaveformUseCenterChannelOnly>
     <DownloadX>下载 {0}</DownloadX>
@@ -3179,6 +3192,7 @@ Command line: {1} {2}
     <GeneratingSpeechFromTextXOfY>从文本生成语音：{0} / {1}...</GeneratingSpeechFromTextXOfY>
     <ReviewAudioClips>审阅音频剪辑</ReviewAudioClips>
     <CustomAudioEncoding>自定义音频编码</CustomAudioEncoding>
+    <UseVoiceOver>使用画外音</UseVoiceOver>
     <ReviewInfo>查看和编辑/删除音频剪辑</ReviewInfo>
     <Play>播放</Play>
     <AutoContinue>自动继续</AutoContinue>

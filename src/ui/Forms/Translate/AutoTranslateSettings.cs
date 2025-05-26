@@ -1,9 +1,9 @@
-﻿using System;
-using System.Windows.Forms;
-using Nikse.SubtitleEdit.Core.AutoTranslate;
+﻿using Nikse.SubtitleEdit.Core.AutoTranslate;
 using Nikse.SubtitleEdit.Core.Common;
 using Nikse.SubtitleEdit.Core.Settings;
 using Nikse.SubtitleEdit.Logic;
+using System;
+using System.Windows.Forms;
 
 namespace Nikse.SubtitleEdit.Forms.Translate
 {
@@ -39,6 +39,10 @@ namespace Nikse.SubtitleEdit.Forms.Translate
             nikseUpDownDelay.Left = labelDelay.Right + 4;
             nikseUpDownMaxBytes.Left = labelMaxBytes.Right + 4;
 
+            labelTemperature.Visible = false;
+            nikseUpDownTemperature.Visible = false;
+            nikseUpDownTemperature.Left = labelTemperature.Right + 4;
+
             if (_engineType == typeof(ChatGptTranslate))
             {
                 nikseTextBoxPrompt.Text = Configuration.Settings.Tools.ChatGptPrompt;
@@ -62,6 +66,22 @@ namespace Nikse.SubtitleEdit.Forms.Translate
                 {
                     nikseTextBoxPrompt.Text = new ToolsSettings().LmStudioPrompt;
                 }
+            }
+            else if (_engineType == typeof(KoboldCppTranslate))
+            {
+                nikseTextBoxPrompt.Text = Configuration.Settings.Tools.KoboldCppPrompt;
+                if (string.IsNullOrWhiteSpace(nikseTextBoxPrompt.Text))
+                {
+                    nikseTextBoxPrompt.Text = new ToolsSettings().KoboldCppPrompt;
+                }
+
+                labelTemperature.Visible = true;
+                nikseUpDownTemperature.Visible = true;
+                if (Configuration.Settings.Tools.KoboldCppTemperature < 0.0m || Configuration.Settings.Tools.KoboldCppTemperature > 1.5m)
+                {
+                    Configuration.Settings.Tools.KoboldCppTemperature = new ToolsSettings().KoboldCppTemperature;
+                }
+                nikseUpDownTemperature.Value = Configuration.Settings.Tools.KoboldCppTemperature;
             }
             else if (_engineType == typeof(AnthropicTranslate))
             {
@@ -87,12 +107,36 @@ namespace Nikse.SubtitleEdit.Forms.Translate
                     nikseTextBoxPrompt.Text = new ToolsSettings().DeepSeekPrompt;
                 }
             }
+            else if (_engineType == typeof(AvalAi))
+            {
+                nikseTextBoxPrompt.Text = Configuration.Settings.Tools.AvalAiPrompt;
+                if (string.IsNullOrWhiteSpace(nikseTextBoxPrompt.Text))
+                {
+                    nikseTextBoxPrompt.Text = new ToolsSettings().AvalAiPrompt;
+                }
+            }
             else if (_engineType == typeof(OpenRouterTranslate))
             {
                 nikseTextBoxPrompt.Text = Configuration.Settings.Tools.OpenRouterPrompt;
                 if (string.IsNullOrWhiteSpace(nikseTextBoxPrompt.Text))
                 {
                     nikseTextBoxPrompt.Text = new ToolsSettings().OpenRouterPrompt;
+                }
+            }
+            else if (_engineType == typeof(MistralTranslate))
+            {
+                nikseTextBoxPrompt.Text = Configuration.Settings.Tools.AutoTranslateMistralPrompt;
+                if (string.IsNullOrWhiteSpace(nikseTextBoxPrompt.Text))
+                {
+                    nikseTextBoxPrompt.Text = new ToolsSettings().AutoTranslateMistralPrompt;
+                }
+            }
+            else if (_engineType == typeof(GeminiTranslate))
+            {
+                nikseTextBoxPrompt.Text = Configuration.Settings.Tools.GeminiPrompt;
+                if (string.IsNullOrWhiteSpace(nikseTextBoxPrompt.Text))
+                {
+                    nikseTextBoxPrompt.Text = new ToolsSettings().GeminiPrompt;
                 }
             }
             else
@@ -150,6 +194,11 @@ namespace Nikse.SubtitleEdit.Forms.Translate
             {
                 Configuration.Settings.Tools.LmStudioPrompt = nikseTextBoxPrompt.Text;
             }
+            else if (_engineType == typeof(KoboldCppTranslate))
+            {
+                Configuration.Settings.Tools.KoboldCppPrompt = nikseTextBoxPrompt.Text;
+                Configuration.Settings.Tools.KoboldCppTemperature = (decimal)nikseUpDownTemperature.Value;
+            }
             else if (_engineType == typeof(AnthropicTranslate))
             {
                 Configuration.Settings.Tools.AnthropicPrompt = nikseTextBoxPrompt.Text;
@@ -162,9 +211,21 @@ namespace Nikse.SubtitleEdit.Forms.Translate
             {
                 Configuration.Settings.Tools.DeepSeekPrompt = nikseTextBoxPrompt.Text;
             }
+            else if (_engineType == typeof(AvalAi))
+            {
+                Configuration.Settings.Tools.AvalAiPrompt = nikseTextBoxPrompt.Text;
+            }
             else if (_engineType == typeof(OpenRouterTranslate))
             {
                 Configuration.Settings.Tools.OpenRouterPrompt = nikseTextBoxPrompt.Text;
+            }
+            else if (_engineType == typeof(MistralTranslate))
+            {
+                Configuration.Settings.Tools.AutoTranslateMistralPrompt = nikseTextBoxPrompt.Text;
+            }
+            else if (_engineType == typeof(GeminiTranslate))
+            {
+                Configuration.Settings.Tools.GeminiPrompt = nikseTextBoxPrompt.Text;
             }
 
             if (comboBoxParagraphHandling.SelectedIndex == 1)

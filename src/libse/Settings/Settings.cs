@@ -1,12 +1,12 @@
-﻿using System;
+﻿using Nikse.SubtitleEdit.Core.Common;
+using Nikse.SubtitleEdit.Core.Enums;
+using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Globalization;
 using System.IO;
 using System.Text;
 using System.Xml;
-using Nikse.SubtitleEdit.Core.Common;
-using Nikse.SubtitleEdit.Core.Enums;
 
 namespace Nikse.SubtitleEdit.Core.Settings
 {
@@ -2311,6 +2311,24 @@ namespace Nikse.SubtitleEdit.Core.Settings
                 settings.Tools.OllamaPrompt = subNode.InnerText;
             }
 
+            subNode = node.SelectSingleNode("KoboldCppUrl");
+            if (subNode != null)
+            {
+                settings.Tools.KoboldCppUrl = subNode.InnerText;
+            }
+
+            subNode = node.SelectSingleNode("KoboldCppPrompt");
+            if (subNode != null)
+            {
+                settings.Tools.KoboldCppPrompt = subNode.InnerText;
+            }
+
+            subNode = node.SelectSingleNode("KoboldCppTemperature");
+            if (subNode != null)
+            {
+                settings.Tools.KoboldCppTemperature = decimal.Parse(subNode.InnerText, CultureInfo.InvariantCulture);
+            }
+
             subNode = node.SelectSingleNode("AnthropicApiUrl");
             if (subNode != null)
             {
@@ -2335,6 +2353,48 @@ namespace Nikse.SubtitleEdit.Core.Settings
                 settings.Tools.AnthropicApiModel = subNode.InnerText;
             }
 
+            subNode = node.SelectSingleNode("AutoTranslateMistralApiKey");
+            if (subNode != null)
+            {
+                settings.Tools.AutoTranslateMistralApiKey = subNode.InnerText;
+            }
+
+            subNode = node.SelectSingleNode("AutoTranslateMistralModel");
+            if (subNode != null)
+            {
+                settings.Tools.AutoTranslateMistralModel = subNode.InnerText;
+            }
+
+            subNode = node.SelectSingleNode("AutoTranslateMistralUrl");
+            if (subNode != null)
+            {
+                settings.Tools.AutoTranslateMistralUrl = subNode.InnerText;
+            }
+
+            subNode = node.SelectSingleNode("AutoTranslateMistralPrompt");
+            if (subNode != null)
+            {
+                settings.Tools.AutoTranslateMistralPrompt = subNode.InnerText;
+            }
+
+            subNode = node.SelectSingleNode("AvalAiApiKey");
+            if (subNode != null)
+            {
+                settings.Tools.AvalAiApiKey = subNode.InnerText;
+            }
+
+            subNode = node.SelectSingleNode("AvalAiPrompt");
+            if (subNode != null)
+            {
+                settings.Tools.AvalAiPrompt = subNode.InnerText;
+            }
+
+            subNode = node.SelectSingleNode("AvalAiModel");
+            if (subNode != null)
+            {
+                settings.Tools.AvalAiModel = subNode.InnerText;
+            }
+
             subNode = node.SelectSingleNode("AutoTranslateDelaySeconds");
             if (subNode != null)
             {
@@ -2357,6 +2417,12 @@ namespace Nikse.SubtitleEdit.Core.Settings
             if (subNode != null)
             {
                 settings.Tools.GeminiProApiKey = subNode.InnerText;
+            }
+
+            subNode = node.SelectSingleNode("GeminiPrompt");
+            if (subNode != null)
+            {
+                settings.Tools.GeminiPrompt = subNode.InnerText;
             }
 
             subNode = node.SelectSingleNode("TextToSpeechEngine");
@@ -4402,6 +4468,25 @@ namespace Nikse.SubtitleEdit.Core.Settings
                 settings.Tools.UnbreakLinesLongerThan = Convert.ToInt32(subNode.InnerText, CultureInfo.InvariantCulture);
             }
 
+            subNode = node.SelectSingleNode("ChangeActorColorAdd");
+            if (subNode != null)
+            {
+                settings.Tools.ConvertActorColorAdd = Convert.ToBoolean(subNode.InnerText, CultureInfo.InvariantCulture);
+            }
+
+            subNode = node.SelectSingleNode("ChangeActorColorAdd");
+            if (subNode != null)
+            {
+                settings.Tools.ConvertActorColor = FromHtml(subNode.InnerText);
+            }
+
+            subNode = node.SelectSingleNode("ChangeActorCasing");
+            if (subNode != null)
+            {
+                settings.Tools.ConvertActorCasing = Convert.ToBoolean(subNode.InnerText, CultureInfo.InvariantCulture);
+            }
+
+
             subNode = node.SelectSingleNode("FindHistory");
             if (subNode != null)
             {
@@ -5548,6 +5633,12 @@ namespace Nikse.SubtitleEdit.Core.Settings
                 settings.VideoControls.SpectrogramAppearance = subNode.InnerText;
             }
 
+            subNode = node.SelectSingleNode("SpectrogramWaveformOpacity");
+            if (subNode != null)
+            {
+                settings.VideoControls.SpectrogramWaveformOpacity = Convert.ToInt32(subNode.InnerText, CultureInfo.InvariantCulture);
+            }
+
             subNode = node.SelectSingleNode("WaveformMinimumSampleRate");
             if (subNode != null)
             {
@@ -5841,6 +5932,18 @@ namespace Nikse.SubtitleEdit.Core.Settings
             if (subNode != null)
             {
                 settings.VobSubOcr.CloudVisionSendOriginalImages = Convert.ToBoolean(subNode.InnerText, CultureInfo.InvariantCulture);
+            }
+
+            subNode = node.SelectSingleNode("OllamaLanguage");
+            if (subNode != null)
+            {
+                settings.VobSubOcr.OllamaLanguage = subNode.InnerText;
+            }
+
+            subNode = node.SelectSingleNode("OllamaModel");
+            if (subNode != null)
+            {
+                settings.VobSubOcr.OllamaModel = subNode.InnerText;
             }
 
             foreach (XmlNode groupNode in doc.DocumentElement.SelectNodes("MultipleSearchAndReplaceGroups/Group"))
@@ -8412,6 +8515,12 @@ namespace Nikse.SubtitleEdit.Core.Settings
                     shortcuts.MainTextBoxAssaRemoveTag = subNode.InnerText;
                 }
 
+                subNode = node.SelectSingleNode("MainTextBoxInsertUnicodeSymbol");
+                if (subNode != null)
+                {
+                    shortcuts.MainTextBoxInsertUnicodeSymbol = subNode.InnerText;
+                }
+
                 subNode = node.SelectSingleNode("MainWaveformInsertAtCurrentPosition");
                 if (subNode != null)
                 {
@@ -9117,13 +9226,24 @@ namespace Nikse.SubtitleEdit.Core.Settings
                 xmlWriter.WriteElementString("OllamaModel", settings.Tools.OllamaModel);
                 xmlWriter.WriteElementString("OllamaPrompt", settings.Tools.OllamaPrompt);
                 xmlWriter.WriteElementString("OllamaApiUrl", settings.Tools.OllamaApiUrl);
+                xmlWriter.WriteElementString("KoboldCppUrl", settings.Tools.KoboldCppUrl);
+                xmlWriter.WriteElementString("KoboldCppPrompt", settings.Tools.KoboldCppPrompt);
+                xmlWriter.WriteElementString("KoboldCppTemperature", settings.Tools.KoboldCppTemperature.ToString(CultureInfo.InvariantCulture));
                 xmlWriter.WriteElementString("AnthropicPrompt", settings.Tools.AnthropicPrompt);
                 xmlWriter.WriteElementString("AnthropicApiKey", settings.Tools.AnthropicApiKey);
                 xmlWriter.WriteElementString("AnthropicApiModel", settings.Tools.AnthropicApiModel);
+                xmlWriter.WriteElementString("AutoTranslateMistralApiKey", settings.Tools.AutoTranslateMistralApiKey);
+                xmlWriter.WriteElementString("AutoTranslateMistralModel", settings.Tools.AutoTranslateMistralModel);
+                xmlWriter.WriteElementString("AutoTranslateMistralUrl", settings.Tools.AutoTranslateMistralUrl);
+                xmlWriter.WriteElementString("AutoTranslateMistralPrompt", settings.Tools.AutoTranslateMistralPrompt);
+                xmlWriter.WriteElementString("AvalAiPrompt", settings.Tools.AvalAiPrompt);
+                xmlWriter.WriteElementString("AvalAiApiKey", settings.Tools.AvalAiApiKey);
+                xmlWriter.WriteElementString("AvalAiModel", settings.Tools.AvalAiModel);
                 xmlWriter.WriteElementString("AutoTranslateDelaySeconds", settings.Tools.AutoTranslateDelaySeconds.ToString(CultureInfo.InvariantCulture));
                 xmlWriter.WriteElementString("AutoTranslateMaxBytes", settings.Tools.AutoTranslateMaxBytes.ToString(CultureInfo.InvariantCulture));
                 xmlWriter.WriteElementString("AutoTranslateStrategy", settings.Tools.AutoTranslateStrategy);
                 xmlWriter.WriteElementString("GeminiProApiKey", settings.Tools.GeminiProApiKey);
+                xmlWriter.WriteElementString("GeminiPrompt", settings.Tools.GeminiPrompt);
                 xmlWriter.WriteElementString("TextToSpeechEngine", settings.Tools.TextToSpeechEngine);
                 xmlWriter.WriteElementString("TextToSpeechLastVoice", settings.Tools.TextToSpeechLastVoice);
                 xmlWriter.WriteElementString("TextToSpeechElevenLabsApiKey", settings.Tools.TextToSpeechElevenLabsApiKey);
@@ -9462,6 +9582,9 @@ namespace Nikse.SubtitleEdit.Core.Settings
                 xmlWriter.WriteElementString("AudioToTextLineMaxCharsCn", settings.Tools.AudioToTextLineMaxCharsCn.ToString(CultureInfo.InvariantCulture));
                 xmlWriter.WriteElementString("UnbreakLinesLongerThan", settings.Tools.UnbreakLinesLongerThan.ToString(CultureInfo.InvariantCulture));
                 xmlWriter.WriteElementString("BreakLinesLongerThan", settings.Tools.BreakLinesLongerThan.ToString(CultureInfo.InvariantCulture));
+                xmlWriter.WriteElementString("ChangeActorColorAdd", settings.Tools.ConvertActorColorAdd.ToString(CultureInfo.InvariantCulture));
+                xmlWriter.WriteElementString("ChangeActorColor", ToHtml(settings.Tools.ConvertActorColor));
+                xmlWriter.WriteElementString("ChangeActorCasing", settings.Tools.ConvertActorCasing.ToString(CultureInfo.InvariantCulture));
 
                 if (settings.Tools.FindHistory != null && settings.Tools.FindHistory.Count > 0)
                 {
@@ -9708,6 +9831,7 @@ namespace Nikse.SubtitleEdit.Core.Settings
                 xmlWriter.WriteElementString("GenerateSpectrogram", settings.VideoControls.GenerateSpectrogram.ToString(CultureInfo.InvariantCulture));
                 xmlWriter.WriteElementString("WaveformLabelShowCodec", settings.VideoControls.WaveformLabelShowCodec.ToString(CultureInfo.InvariantCulture));
                 xmlWriter.WriteElementString("SpectrogramAppearance", settings.VideoControls.SpectrogramAppearance);
+                xmlWriter.WriteElementString("SpectrogramWaveformOpacity", settings.VideoControls.SpectrogramWaveformOpacity.ToString(CultureInfo.InvariantCulture));
                 xmlWriter.WriteElementString("WaveformMinimumSampleRate", settings.VideoControls.WaveformMinimumSampleRate.ToString(CultureInfo.InvariantCulture));
                 xmlWriter.WriteElementString("WaveformSeeksSilenceDurationSeconds", settings.VideoControls.WaveformSeeksSilenceDurationSeconds.ToString(CultureInfo.InvariantCulture));
                 xmlWriter.WriteElementString("WaveformSeeksSilenceMaxVolume", settings.VideoControls.WaveformSeeksSilenceMaxVolume.ToString(CultureInfo.InvariantCulture));
@@ -9762,6 +9886,8 @@ namespace Nikse.SubtitleEdit.Core.Settings
                 xmlWriter.WriteElementString("CloudVisionApiKey", settings.VobSubOcr.CloudVisionApiKey);
                 xmlWriter.WriteElementString("CloudVisionLanguage", settings.VobSubOcr.CloudVisionLanguage);
                 xmlWriter.WriteElementString("CloudVisionSendOriginalImages", settings.VobSubOcr.CloudVisionSendOriginalImages.ToString(CultureInfo.InvariantCulture));
+                xmlWriter.WriteElementString("OllamaLanguage", settings.VobSubOcr.OllamaLanguage);
+                xmlWriter.WriteElementString("OllamaModel", settings.VobSubOcr.OllamaModel);
 
                 xmlWriter.WriteEndElement();
 
@@ -10327,6 +10453,7 @@ namespace Nikse.SubtitleEdit.Core.Settings
             textWriter.WriteElementString("MainTextBoxUnbrekNoSpace", shortcuts.MainTextBoxUnbreakNoSpace);
             textWriter.WriteElementString("MainTextBoxAssaIntellisense", shortcuts.MainTextBoxAssaIntellisense);
             textWriter.WriteElementString("MainTextBoxAssaRemoveTag", shortcuts.MainTextBoxAssaRemoveTag);
+            textWriter.WriteElementString("MainTextBoxInsertUnicodeSymbol", shortcuts.MainTextBoxInsertUnicodeSymbol);
             textWriter.WriteElementString("MainWaveformInsertAtCurrentPosition", shortcuts.MainWaveformInsertAtCurrentPosition);
             textWriter.WriteElementString("MainInsertBefore", shortcuts.MainInsertBefore);
             textWriter.WriteElementString("MainMergeDialog", shortcuts.MainMergeDialog);

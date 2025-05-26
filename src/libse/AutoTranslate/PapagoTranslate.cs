@@ -12,7 +12,7 @@ using System.Threading.Tasks;
 
 namespace Nikse.SubtitleEdit.Core.AutoTranslate
 {
-    public class PapagoTranslate : IAutoTranslator
+    public class PapagoTranslate : IAutoTranslator, IDisposable
     {
         private HttpClient _httpClient;
 
@@ -26,7 +26,7 @@ namespace Nikse.SubtitleEdit.Core.AutoTranslate
         public void Initialize()
         {
             _httpClient?.Dispose();
-            _httpClient = new HttpClient(); 
+            _httpClient = HttpClientFactoryWithProxy.CreateHttpClientWithProxy();
             _httpClient.DefaultRequestHeaders.TryAddWithoutValidation("Content-Type", "application/json");
             _httpClient.DefaultRequestHeaders.TryAddWithoutValidation("accept", "application/json");
             _httpClient.DefaultRequestHeaders.TryAddWithoutValidation("X-NCP-APIGW-API-KEY-ID", Configuration.Settings.Tools.AutoTranslatePapagoApiKeyId);
@@ -110,6 +110,11 @@ namespace Nikse.SubtitleEdit.Core.AutoTranslate
             }
 
             return result;
+        }
+
+        public void Dispose()
+        {
+            _httpClient?.Dispose();
         }
     }
 }

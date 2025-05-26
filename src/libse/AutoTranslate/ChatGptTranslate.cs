@@ -4,6 +4,7 @@ using Nikse.SubtitleEdit.Core.SubtitleFormats;
 using Nikse.SubtitleEdit.Core.Translate;
 using System;
 using System.Collections.Generic;
+using System.Linq.Expressions;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
@@ -13,8 +14,10 @@ using System.Threading.Tasks;
 
 namespace Nikse.SubtitleEdit.Core.AutoTranslate
 {
-    public class ChatGptTranslate : IAutoTranslator
+    public class ChatGptTranslate : IAutoTranslator, IDisposable
     {
+        private static readonly Regex UnicodeRegex = new Regex(@"\\u([0-9a-fA-F]{4})", RegexOptions.Compiled);
+
         private HttpClient _httpClient;
 
         public static string StaticName { get; set; } = "ChatGPT";
@@ -25,7 +28,7 @@ namespace Nikse.SubtitleEdit.Core.AutoTranslate
         public int MaxCharacters => 1500;
         public static string[] Models => new[]
         {
-            "gpt-4o-mini", "o1-mini", "gpt-4o", "gpt-4-turbo", "gpt-3.5-turbo", "gpt-4"
+            "gpt-4.1-mini", "gpt-4.1-nano", "o4-mini", "o3-mini", "o1-mini", "gpt-4o-mini", "gpt-4o", "gpt-4-turbo", "gpt-3.5-turbo", "gpt-4"
         };
 
         public static string RemovePreamble(string original, string input)
@@ -39,7 +42,7 @@ namespace Nikse.SubtitleEdit.Core.AutoTranslate
             var indexOfStartThink = translation.IndexOf("<think>");
             var indexOfEndThink = translation.IndexOf("</think>");
             if (indexOfStartThink >= 0 && indexOfEndThink > indexOfStartThink)
-            { 
+            {
                 translation = translation.Remove(indexOfStartThink, indexOfEndThink - indexOfStartThink + 8).Trim();
             }
 
@@ -57,7 +60,7 @@ namespace Nikse.SubtitleEdit.Core.AutoTranslate
         public void Initialize()
         {
             _httpClient?.Dispose();
-            _httpClient = new HttpClient();
+            _httpClient = HttpClientFactoryWithProxy.CreateHttpClientWithProxy();
             _httpClient.DefaultRequestHeaders.TryAddWithoutValidation("Content-Type", "application/json");
             _httpClient.DefaultRequestHeaders.TryAddWithoutValidation("accept", "application/json");
             _httpClient.BaseAddress = new Uri(Configuration.Settings.Tools.ChatGptUrl.TrimEnd('/'));
@@ -122,6 +125,7 @@ namespace Nikse.SubtitleEdit.Core.AutoTranslate
 
             outputText = FixNewLines(outputText);
             outputText = RemovePreamble(text, outputText);
+            outputText = DecodeUnicodeEscapes(outputText);
             return outputText.Trim();
         }
 
@@ -145,7 +149,8 @@ namespace Nikse.SubtitleEdit.Core.AutoTranslate
                MakePair("Cantonese","zh"),
                MakePair("Catalan","ca"),
                MakePair("Chhattisgarhi",""),
-               MakePair("Chinese","zh"),
+               MakePair("Chinese (Simplified)", "zho-Hans"),
+               MakePair("Chinese (Traditional)","zh-Hant"),
                MakePair("Croatian","hr"),
                MakePair("Czech","cs"),
                MakePair("Danish","da"),
@@ -211,7 +216,10 @@ namespace Nikse.SubtitleEdit.Core.AutoTranslate
                MakePair("Slovene","sl"),
                MakePair("Slovenian","sl"),
                MakePair("Spanish","es"),
+               MakePair("Spanish (Latin America)","es-419"),
                MakePair("Swedish","sv"),
+               MakePair("Tatar","tt"),
+               MakePair("Thai","th"),
                MakePair("Turkish","tr"),
                MakePair("Ukrainian","uk"),
                MakePair("Uyghur","ug"),
@@ -228,6 +236,19 @@ namespace Nikse.SubtitleEdit.Core.AutoTranslate
             return new TranslationPair(nameCode, nameCode, twoLetter);
         }
 
+        internal static string DecodeUnicodeEscapes(string input)
+        {
+            try
+            {
+                return UnicodeRegex.Replace(input, match =>
+                 char.ConvertFromUtf32(int.Parse(match.Groups[1].Value, System.Globalization.NumberStyles.HexNumber)));
+            }
+            catch
+            {
+                return input;
+            }
+        }
+
         internal static string FixNewLines(string outputText)
         {
             outputText = outputText.Replace("<br/>", Environment.NewLine);
@@ -235,6 +256,11 @@ namespace Nikse.SubtitleEdit.Core.AutoTranslate
             outputText = outputText.Replace("<br  />", Environment.NewLine);
             outputText = outputText.Replace(Environment.NewLine + Environment.NewLine, Environment.NewLine);
             return outputText.Trim();
+        }
+
+        public void Dispose()
+        {
+            _httpClient?.Dispose();
         }
     }
 }

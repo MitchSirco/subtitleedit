@@ -12,7 +12,7 @@ using Nikse.SubtitleEdit.Core.Settings;
 
 namespace Nikse.SubtitleEdit.Core.AutoTranslate
 {
-    public class GroqTranslate : IAutoTranslator
+    public class GroqTranslate : IAutoTranslator, IDisposable
     {
         private HttpClient _httpClient;
 
@@ -37,7 +37,7 @@ namespace Nikse.SubtitleEdit.Core.AutoTranslate
         public void Initialize()
         {
             _httpClient?.Dispose();
-            _httpClient = new HttpClient();
+            _httpClient = HttpClientFactoryWithProxy.CreateHttpClientWithProxy();
             _httpClient.DefaultRequestHeaders.TryAddWithoutValidation("Content-Type", "application/json");
             _httpClient.DefaultRequestHeaders.TryAddWithoutValidation("accept", "application/json");
             _httpClient.BaseAddress = new Uri(Configuration.Settings.Tools.GroqUrl.TrimEnd('/'));
@@ -107,12 +107,18 @@ namespace Nikse.SubtitleEdit.Core.AutoTranslate
 
             outputText = ChatGptTranslate.FixNewLines(outputText);
             outputText = ChatGptTranslate.RemovePreamble(text, outputText);
+            outputText = ChatGptTranslate.DecodeUnicodeEscapes(outputText);
             return outputText.Trim();
         }
 
         public static List<TranslationPair> ListLanguages()
         {
             return ChatGptTranslate.ListLanguages();
+        }
+
+        public void Dispose()
+        {
+            _httpClient?.Dispose();
         }
     }
 }

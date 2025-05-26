@@ -15,7 +15,7 @@ namespace Nikse.SubtitleEdit.Core.AutoTranslate
     /// <summary>
     /// Google translate via Google V1 API - see https://cloud.google.com/translate/
     /// </summary>
-    public class GoogleTranslateV1 : IAutoTranslator
+    public class GoogleTranslateV1 : IAutoTranslator, IDisposable
     {
         private HttpClient _httpClient;
 
@@ -29,7 +29,7 @@ namespace Nikse.SubtitleEdit.Core.AutoTranslate
         public void Initialize()
         {
             _httpClient?.Dispose();
-            _httpClient = new HttpClient(); //DownloaderFactory.MakeHttpClient();
+            _httpClient = HttpClientFactoryWithProxy.CreateHttpClientWithProxy();
             _httpClient.DefaultRequestHeaders.Add("user-agent", "Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2228.0 Safari/537.36");
             _httpClient.DefaultRequestHeaders.TryAddWithoutValidation("Content-Type", "application/json; charset=UTF-8");
             _httpClient.BaseAddress = new Uri("https://translate.googleapis.com/");
@@ -264,8 +264,16 @@ namespace Nikse.SubtitleEdit.Core.AutoTranslate
                 res = res.Replace("\\n", "\n");
             }
 
+            res = res.Replace(" " + Environment.NewLine, Environment.NewLine);
+            res = res.Replace(" \n", "\n").Trim();
+
             var lines = res.SplitToLines().ToList();
             return lines;
+        }
+
+        public void Dispose()
+        {
+            _httpClient?.Dispose();
         }
     }
 }

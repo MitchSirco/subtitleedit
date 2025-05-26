@@ -45,6 +45,8 @@ namespace Nikse.SubtitleEdit.Core.Settings
         public bool WaveformLabelShowCodec { get; set; }
         public bool GenerateSpectrogram { get; set; }
         public string SpectrogramAppearance { get; set; }
+
+        public int SpectrogramWaveformOpacity { get; set; }
         public int WaveformMinimumSampleRate { get; set; }
         public double WaveformSeeksSilenceDurationSeconds { get; set; }
         public double WaveformSeeksSilenceMaxVolume { get; set; }
@@ -81,6 +83,7 @@ namespace Nikse.SubtitleEdit.Core.Settings
             WaveformMouseWheelScrollUpIsForward = true;
             WaveformLabelShowCodec = true;
             SpectrogramAppearance = "OneColorGradient";
+            SpectrogramWaveformOpacity = 256;
             WaveformMinimumSampleRate = 126;
             WaveformSeeksSilenceDurationSeconds = 0.3;
             WaveformSeeksSilenceMaxVolume = 0.1;

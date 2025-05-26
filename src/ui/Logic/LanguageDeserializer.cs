@@ -1576,6 +1576,27 @@ namespace Nikse.SubtitleEdit.Logic
                 case "CompareSubtitles/CannotCompareWithImageBasedSubtitles":
                     language.CompareSubtitles.CannotCompareWithImageBasedSubtitles = reader.Value;
                     break;
+                case "ConvertActor/Title":
+                    language.ConvertActor.Title = reader.Value;
+                    break;
+                case "ConvertActor/ConvertActorFrom":
+                    language.ConvertActor.ConvertActorFrom = reader.Value;
+                    break;
+                case "ConvertActor/ConvertActorTo":
+                    language.ConvertActor.ConvertActorTo = reader.Value;
+                    break;
+                case "ConvertActor/InlineActorViaX":
+                    language.ConvertActor.InlineActorViaX = reader.Value;
+                    break;
+                case "ConvertActor/NumberOfConversionsX":
+                    language.ConvertActor.NumberOfConversionsX = reader.Value;
+                    break;
+                case "ConvertActor/SetColor":
+                    language.ConvertActor.SetColor = reader.Value;
+                    break;
+                case "ConvertActor/OnlyNames":
+                    language.ConvertActor.OnlyNames = reader.Value;
+                    break;
                 case "ConvertColorsToDialog/Title":
                     language.ConvertColorsToDialog.Title = reader.Value;
                     break;
@@ -4612,6 +4633,9 @@ namespace Nikse.SubtitleEdit.Logic
                 case "Main/Menu/Tools/ConvertColorsToDialog":
                     language.Main.Menu.Tools.ConvertColorsToDialog = reader.Value;
                     break;
+                case "Main/Menu/Tools/ConvertActors":
+                    language.Main.Menu.Tools.ConvertActors = reader.Value;
+                    break;
                 case "Main/Menu/Tools/ChangeCasing":
                     language.Main.Menu.Tools.ChangeCasing = reader.Value;
                     break;
@@ -6730,6 +6754,15 @@ namespace Nikse.SubtitleEdit.Logic
                 case "Settings/SpectrogramClassic":
                     language.Settings.SpectrogramClassic = reader.Value;
                     break;
+                case "Settings/SpectrogramHeat":
+                    language.Settings.SpectrogramHeat = reader.Value;
+                    break;
+                case "Settings/SpectrogramCyanToOrange":
+                    language.Settings.SpectrogramCyanToOrange = reader.Value;
+                    break;
+                case "Settings/SpectrogramWaveformOpacity":
+                    language.Settings.SpectrogramWaveformOpacity = reader.Value;
+                    break;
                 case "Settings/WaveformUseFFmpeg":
                     language.Settings.WaveformUseFFmpeg = reader.Value;
                     break;
@@ -8754,6 +8787,9 @@ namespace Nikse.SubtitleEdit.Logic
                     break;
                 case "TextToSpeech/CustomAudioEncoding":
                     language.TextToSpeech.CustomAudioEncoding = reader.Value;
+                    break;
+                case "TextToSpeech/UseVoiceOver":
+                    language.TextToSpeech.UseVoiceOver = reader.Value;
                     break;
                 case "TextToSpeech/ReviewInfo":
                     language.TextToSpeech.ReviewInfo = reader.Value;

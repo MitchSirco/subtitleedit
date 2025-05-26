@@ -542,8 +542,9 @@ optional arguments:
   --ff_lowhighpass      Audio filter: Pass 50Hz - 7800 band. sinc + afir. (default: False)</value>
   </data>
   <data name="nikseTextBox1.Text" xml:space="preserve">
-    <value>[--device DEVICE] [--output_dir OUTPUT_DIR]
-[--output_format [{json,lrc,txt,text,vtt,srt,tsv,all} ...]]
+    <value>Faster-Whisper-XXL r245.4
+
+[--device DEVICE] [--output_dir OUTPUT_DIR]
 [--compute_type {default,auto,int8,int8_float16,int8_float32,int8_bfloat16,int16,float16,float32,bfloat16}]
 [--verbose VERBOSE]
 [--task {transcribe,translate}]
@@ -590,6 +591,7 @@ optional arguments:
 [--hotwords HOTWORDS] [--batched]
 [--batch_size BATCH_SIZE]
 [--multilingual MULTILINGUAL]
+[--model_preload MODEL_PRELOAD]
 [--batch_recursive] [--beep_off] [--skip]
 [--checkcuda] [--print_progress] [--postfix]
 [--check_files] [--alt_writer_off]
@@ -607,14 +609,15 @@ optional arguments:
 [--max_line_count MAX_LINE_COUNT]
 [--min_dist_to_end {0,4,5,6,7,8,9,10,11,12}]
 [--ff_dump] [--ff_track {1,2,3,4,5,6}] [--ff_fc]
-[--ff_mp3] [--ff_sync] [--ff_rnndn_sh]
-[--ff_rnndn_xiph] [--ff_fftdn [0 - 97]]
-[--ff_tempo [0.5 - 2.0]] [--ff_gate]
-[--ff_speechnorm] [--ff_loudnorm]
+[--ff_lc] [--ff_invert] [--ff_mp3] [--ff_sync]
+[--ff_rnndn_sh] [--ff_rnndn_xiph]
+[--ff_fftdn [0 - 97]] [--ff_tempo [0.5 - 2.0]]
+[--ff_gate] [--ff_speechnorm] [--ff_loudnorm]
 [--ff_silence_suppress noise duration]
-[--ff_lowhighpass] [--ff_mdx_kim2]
+[--ff_lowhighpass]
+[--ff_vocal_extract {mdx_kim2}]
 [--mdx_chunk MDX_CHUNK]
-[--mdx_device MDX_DEVICE]
+[--voc_device VOC_DEVICE]
 [--diarize {pyannote_v3.0,pyannote_v3.1,reverb_v1,reverb_v2}]
 [--diarize_device DIARIZE_DEVICE]
 [--diarize_threads DIARIZE_THREADS]
@@ -622,9 +625,11 @@ optional arguments:
 [--num_speakers NUM_SPEAKERS]
 [--min_speakers MIN_SPEAKERS]
 [--max_speakers MAX_SPEAKERS]
+[--diarize_ff DIARIZE_FF] [--return_embeddings]
+[--diarize_only]
+audio [audio ...]
 
 options:
-  -h, --help            show this help message and exit
   --model MODEL, -m MODEL
                         name of the Whisper model to use (default: medium)
   --model_dir MODEL_DIR
@@ -821,9 +826,10 @@ options:
                         context tokens space. Has no effect if --prefix is not
                         None. (default: None)
   --batched             Enables batched inference mode - transcribes audio in
-                        batched VAD's chunks. Can increase speed ~2x-4x but
-                        will decrease transcription quality. Many options
-                        doesn't work in this mode. (default: False)
+                        batched VAD's chunks. Can increase speed ~2x-8x but
+                        will decrease the long form transcription quality a
+                        bit. Many options don't work in this mode. (default:
+                        False)
   --batch_size BATCH_SIZE
                         When using batched inference it sets the maximum
                         number of parallel requests to model for decoding.
@@ -831,6 +837,13 @@ options:
   --multilingual MULTILINGUAL
                         Perform language detection on every segment. (default:
                         False)
+  --model_preload MODEL_PRELOAD
+                        True: faster-whisper model is preloaded before
+                        iteration on audio, but interferes with '--
+                        ff_vocal_extract' models. False: Runs inside iteration
+                        after '--ff...' filters. None: automatic, it's
+                        default, False if 'ff_vocal_extract' or 'diarize_only'
+                        is enabled. (default: None)
   --batch_recursive, -br
                         Enables recursive batch files processing. Note: If set
                         then it changes defaults of --output_dir. (default:
@@ -884,8 +897,8 @@ options:
                         hallucinations, not missing sentences, positive effect
                         with --multilingual. (default: False)
   --japanese {blend,kanji,hiragana,katakana}, -ja {blend,kanji,hiragana,katakana}
-                        This option may stear Japanese output to have a more
-                        prefered writing style. (default: blend)
+                        This option may steer Japanese output to have a more
+                        preferred writing style. (default: blend)
   --one_word {0,1,2}    0) Disabled. 1) Outputs srt and vtt subtitles with one
                         word per line. 2) As '1', plus removes whitespace and
                         ensures &gt;= 50ms for sub lines. Note: VAD may slightly
@@ -936,6 +949,13 @@ options:
                         track. (default: 1)
   --ff_fc               Selects only front-center channel (FC) to process.
                         (default: False)
+  --ff_lc               Selects only a left channel to process. Useful if
+                        audio contains inverted polarity content, for example
+                        a narration. (default: False)
+  --ff_invert           Inverts polarity a left channel and mix audio to mono,
+                        to keep inverted polarity content and delete same
+                        signal in the channels. Useful if audio contains
+                        inverted polarity content. (default: False)
   --ff_mp3              Audio filter: Conversion to MP3 and back. (default:
                         False)
   --ff_sync             Audio filter: Stretch/squeeze samples to the given
@@ -969,23 +989,23 @@ options:
                         duration in seconds [0.1 - 10]. (default: [0, 3.0])
   --ff_lowhighpass      Audio filter: Pass 50Hz - 7800 band. sinc + afir.
                         (default: False)
-  --ff_mdx_kim2         Audio filter: High quality vocals extraction. MDX-Net
-                        'Kim_Vocal_2' model made by KimberleyJensen. Notes:
-                        It's better than 'HT Demucs v4 FT', first in the
-                        filters chain, recommended to use on movies and
-                        series. (default: False)
+  --ff_vocal_extract {mdx_kim2}, -ff_voc {mdx_kim2}
+                        Audio filter: vocals extraction. MDX 'Kim_Vocal_2'
+                        model made by Kimberley Jensen. (default: None)
   --mdx_chunk MDX_CHUNK
-                        Chunk size in seconds for MDX-Net filter. Notes:
-                        Smaller is using less memory, but can be slower and
-                        produce a bit lower quality. (default: 15)
-  --mdx_device MDX_DEVICE
-                        Device to use for MDX-Net filter. Default is 'cuda' if
-                        CUDA device is detected, else is 'cpu'. If CUDA GPU is
-                        a second device then set 'cuda:1'. (default: cpu)
+                        Chunk size in seconds for mdx_kim2/mdx1_kim2 filter.
+                        Notes: Smaller is using less VRAM, but can be slower
+                        and produce a bit lower quality. (default: 15)
+  --voc_device VOC_DEVICE
+                        Device to use for vocals extractin filter. Default is
+                        'cuda' if CUDA device is detected, else is 'cpu'. If
+                        CUDA GPU is a second device then set 'cuda:1'.
+                        (default: cpu)
   --diarize {pyannote_v3.0,pyannote_v3.1,reverb_v1,reverb_v2}
-                        Notes: It will activate --sentence and all output
-                        formats will be affected, exept json. Read more there
-                        - 'https://github.com/Purfview/whisper-standalone-
+                        Enables diarization. Notes: It will activate
+                        --sentence and all output formats will be affected,
+                        exept json. Read more there -
+                        'https://github.com/Purfview/whisper-standalone-
                         win/discussions/322'. (default: None)
   --diarize_device DIARIZE_DEVICE
                         Device to use for '--diarize'. Default is 'cuda' if
@@ -993,7 +1013,8 @@ options:
                         a second device then set 'cuda:1'. (default: cpu)
   --diarize_threads DIARIZE_THREADS
                         Automatic by default. (default: 0)
-  --diarize_dump        Dump diarization output to a file. (default: False)
+  --diarize_dump        Dump diarization output to a file. Note: No need to
+                        set when'--diarize_only'. (default: False)
   --speaker SPEAKER     Diarization: To replace 'SPEAKER' string with your own
                         word. (default: SPEAKER)
   --num_speakers NUM_SPEAKERS
@@ -1004,6 +1025,18 @@ options:
                         when `num_speakers` is provided. (default: None)
   --max_speakers MAX_SPEAKERS
                         Diarization: Maximum number of speakers. Has no effect
-                        when `num_speakers` is provided. (default: None)</value>
+                        when `num_speakers` is provided. (default: None)
+  --diarize_ff DIARIZE_FF
+                        True: diarize after '--ff_...' audio filters, but runs
+                        inside iteration and interferes with FW model if '--
+                        model_preload' is True. False: diarize all files
+                        before anything else. None: automatic, it's default,
+                        True if any 'ff' filter is enabled. (default: None)
+  --return_embeddings, -embeddings
+                        Dump diarization embeddings to the files. Get a one
+                        embedding per speaker. (default: False)
+  --diarize_only        Use if you want to do diarizations without
+                        transcription. Note: No need to set '--diarize_dump'.
+                        (default: False)</value>
   </data>
 </root>

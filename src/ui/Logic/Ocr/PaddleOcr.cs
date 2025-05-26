@@ -13,7 +13,9 @@ namespace Nikse.SubtitleEdit.Logic.Ocr
 {
     public class PaddleOcr
     {
-        public string Error { get; set; }
+        private List<PaddleOcrResultParser.TextDetectionResult> _textDetectionResults = new List<PaddleOcrResultParser.TextDetectionResult>(); public string Error { get; set; }
+        private bool hasErrors = false;
+        private bool processingStarted = false;
         private string _paddingOcrPath;
         private string _clsPath;
         private string _detPath;
@@ -115,6 +117,8 @@ namespace Nikse.SubtitleEdit.Logic.Ocr
         public string Ocr(Bitmap bitmap, string language, bool useGpu)
         {
             _log.Clear();
+            hasErrors = false;
+            processingStarted = false;
             var detFilePrefix = language;
             if (language != "en" && language != "ch" && !LatinLanguageCodes.Contains(language))
             {
@@ -186,11 +190,10 @@ namespace Nikse.SubtitleEdit.Logic.Ocr
                     RedirectStandardOutput = true,
                     RedirectStandardError = true,
                     CreateNoWindow = true,
+                    StandardOutputEncoding = Encoding.UTF8,
                 },
             })
             {
-                process.StartInfo.StandardOutputEncoding = Encoding.UTF8;
-                process.StartInfo.RedirectStandardOutput = true;
                 process.StartInfo.EnvironmentVariables["PYTHONIOENCODING"] = "utf-8";
                 process.StartInfo.EnvironmentVariables["PYTHONUTF8"] = "1";
 
@@ -205,9 +208,12 @@ namespace Nikse.SubtitleEdit.Logic.Ocr
 
                     _log.AppendLine(outLine.Data);
 
-                    if (outLine.Data.Contains("ppocr INFO: **********"))
+                    if (!processingStarted && outLine.Data.Contains("ppocr INFO: **********"))
                     {
-                        return;
+                        processingStarted = true;
+                        hasErrors = false;
+                        _log.Clear();
+                        _log.AppendLine(outLine.Data);
                     }
                     else if (outLine.Data.Contains("ppocr WARNING: No text found in image"))
                     {
@@ -216,15 +222,7 @@ namespace Nikse.SubtitleEdit.Logic.Ocr
                     }
                     else if (outLine.Data.Contains("ppocr INFO:"))
                     {
-                        // Regex pattern to extract the text inside quotes
-                        string textPattern = @"['""].*['""]";
-                        var textMatch = Regex.Match(outLine.Data, textPattern);
-
-                        if (textMatch.Success)
-                        {
-                            string extractedText = textMatch.Value.Trim('\'', '"');
-                            result += extractedText + Environment.NewLine;
-                        }
+                        SaveText(outLine);
                     }
                 };
 
@@ -236,9 +234,11 @@ namespace Nikse.SubtitleEdit.Logic.Ocr
                     }
                     Error = errorLine.Data;
 
+                    hasErrors = true;
                     _log.AppendLine(errorLine.Data);
-                    SeLogger.Error("PaddleOcrError: " + _log.ToString());
                 };
+
+                _textDetectionResults.Clear();
 
                 try
                 {
@@ -248,14 +248,19 @@ namespace Nikse.SubtitleEdit.Logic.Ocr
 #pragma warning restore CA1416 // Validate platform compatibility;
 
                     process.BeginOutputReadLine();
+                    process.BeginErrorReadLine();
 
                     process.WaitForExit();
 
                     borderedBitmap.Dispose();
 
+                    if (hasErrors)
+                    {
+                        SeLogger.Error("PaddleOcrError: " + _log.ToString());
+                    }
+
                     if (process.ExitCode != 0)
                     {
-                        Error = process.StandardError.ReadToEnd();
                         return string.Empty;
                     }
 
@@ -268,6 +273,12 @@ namespace Nikse.SubtitleEdit.Logic.Ocr
                         // ignore
                     }
 
+                    if (_textDetectionResults.Count == 0)
+                    {
+                        return string.Empty;
+                    }
+
+                    result = MakeResult(_textDetectionResults);
                     return result;
                 }
                 catch (Exception ex)
@@ -279,11 +290,27 @@ namespace Nikse.SubtitleEdit.Logic.Ocr
             }
         }
 
+        private void SaveText(DataReceivedEventArgs outLine)
+        {
+            // Note: It's *very* important to keep the box positions
+            //       as they are used to determine the line breaking/order of the text
+            var pattern = @"\[\[\[\d+\.\d+,\s*\d+\.\d+],\s*\[\d+\.\d+,\s*\d+\.\d+],\s*\[\d+\.\d+,\s*\d+\.\d+],\s*\[\d+\.\d+,\s*\d+\.\d+]],\s*\(['""].*['""],\s*\d+\.\d+\)\]";
+            var match = Regex.Match(outLine.Data, pattern);
+            if (match.Success)
+            {
+                var parser = new PaddleOcrResultParser();
+                var x = parser.Parse(outLine.Data);
+                _textDetectionResults.Add(x);
+            }
+        }
+
         private object LockObject = new object();
 
         public void OcrBatch(List<PaddleOcrInput> input, string language, bool useGpu, Action<PaddleOcrInput> progressCallback, Func<bool> abortCheck)
         {
             _log.Clear();
+            hasErrors = false;
+            processingStarted = false;
             var detFilePrefix = language;
             if (language != "en" && language != "ch" && !LatinLanguageCodes.Contains(language))
             {
@@ -383,18 +410,6 @@ namespace Nikse.SubtitleEdit.Logic.Ocr
                     var currentProgress = 0;
                     var oldFileName = string.Empty;
 
-                    process.ErrorDataReceived += (sendingProcess, errorLine) =>
-                    {
-                        if (errorLine == null || string.IsNullOrWhiteSpace(errorLine.Data))
-                        {
-                            return;
-                        }
-                        Error = errorLine.Data;
-
-                        _log.AppendLine(errorLine.Data);
-                        SeLogger.Error("PaddleOcrError: " + _log.ToString());
-
-                    };
                     process.OutputDataReceived += (sendingProcess, outLine) =>
                     {
                         if (string.IsNullOrWhiteSpace(outLine.Data))
@@ -406,12 +421,29 @@ namespace Nikse.SubtitleEdit.Logic.Ocr
 
                         if (outLine.Data.Contains("ppocr INFO: **********"))
                         {
+                            if (!processingStarted)
+                            {
+                                processingStarted = true;
+                                hasErrors = false;
+                                _log.Clear();
+                                _log.AppendLine(outLine.Data);
+                            }
+
                             if (!string.IsNullOrEmpty(oldFileName))
                             {
                                 var existingInput = input.FirstOrDefault(p => p.FileName == oldFileName);
                                 if (existingInput != null)
                                 {
                                     existingInput.Text = results[oldFileName].Trim();
+
+                                    var result = string.Empty;
+                                    if (_textDetectionResults.Count > 0)
+                                    {
+                                        result = MakeResult(_textDetectionResults);
+                                    }
+
+                                    existingInput.Text = result;
+                                    _textDetectionResults.Clear();
 
                                     lock (LockObject)
                                     {
@@ -439,16 +471,7 @@ namespace Nikse.SubtitleEdit.Logic.Ocr
                             if (results.Count > 0)
                             {
                                 var lastFile = results.Keys.Last();
-
-                                // Regex pattern to extract the text inside quotes
-                                var textPattern = @"['""].*['""]";
-                                var textMatch = Regex.Match(outLine.Data, textPattern);
-
-                                if (textMatch.Success)
-                                {
-                                    var extractedText = textMatch.Value.Trim('\'', '"');
-                                    results[lastFile] += extractedText + Environment.NewLine;
-                                }
+                                SaveText(outLine);
                             }
                         }
 
@@ -468,12 +491,31 @@ namespace Nikse.SubtitleEdit.Logic.Ocr
                         }
                     };
 
+                    process.ErrorDataReceived += (sendingProcess, errorLine) =>
+                    {
+                        if (errorLine == null || string.IsNullOrWhiteSpace(errorLine.Data))
+                        {
+                            return;
+                        }
+                        Error = errorLine.Data;
+
+                        hasErrors = true;
+                        _log.AppendLine(errorLine.Data);
+                    };
+
 #pragma warning disable CA1416 // Validate platform compatibility
                     process.Start();
 #pragma warning restore CA1416 // Validate platform compatibility;
 
                     process.BeginOutputReadLine();
+                    process.BeginErrorReadLine();
+
                     process.WaitForExit();
+
+                    if (hasErrors)
+                    {
+                        SeLogger.Error("PaddleOcrError: " + _log.ToString());
+                    }
 
                     if (!string.IsNullOrEmpty(oldFileName))
                     {
@@ -481,6 +523,15 @@ namespace Nikse.SubtitleEdit.Logic.Ocr
                         if (existingInput != null)
                         {
                             existingInput.Text = results[oldFileName].Trim();
+
+                            var result = string.Empty;
+                            if (_textDetectionResults.Count > 0)
+                            {
+                                result = MakeResult(_textDetectionResults);
+                            }
+
+                            existingInput.Text = result;
+                            _textDetectionResults.Clear();
 
                             lock (LockObject)
                             {
@@ -533,6 +584,60 @@ namespace Nikse.SubtitleEdit.Logic.Ocr
             return borderedBitmap;
         }
 
+        private string MakeResult(List<PaddleOcrResultParser.TextDetectionResult> textDetectionResults)
+        {
+            var sb = new StringBuilder();
+            var lines = MakeLines(textDetectionResults);
+            foreach (var line in lines)
+            {
+                var text = string.Join(" ", line.Select(p => p.Text));
+                sb.AppendLine(text);
+            }
+
+            return sb.ToString().Trim().Replace(" " + Environment.NewLine, Environment.NewLine);
+        }
+
+        private List<List<PaddleOcrResultParser.TextDetectionResult>> MakeLines(List<PaddleOcrResultParser.TextDetectionResult> input)
+        {
+            var result = new List<List<PaddleOcrResultParser.TextDetectionResult>>();
+            var heightAverage = input.Average(p => p.BoundingBox.Height);
+            var sorted = input.OrderBy(p => p.BoundingBox.Center.Y);
+            var line = new List<PaddleOcrResultParser.TextDetectionResult>();
+            PaddleOcrResultParser.TextDetectionResult last = null;
+            foreach (var element in sorted)
+            {
+                if (last == null)
+                {
+                    line.Add(element);
+                }
+                else
+                {
+                    if (element.BoundingBox.Center.Y > last.BoundingBox.TopLeft.Y + heightAverage)
+                    {
+
+                        result.Add(line.OrderBy(p => p.BoundingBox.TopLeft.X).ToList());
+                        line = new List<PaddleOcrResultParser.TextDetectionResult>
+                        {
+                            element
+                        };
+                    }
+                    else
+                    {
+                        line.Add(element);
+                    }
+                }
+
+                last = element;
+            }
+
+            if (line.Count > 0)
+            {
+                result.Add(line.OrderBy(p => p.BoundingBox.TopLeft.X).ToList());
+            }
+
+            return result;
+        }
+
         public static List<OcrLanguage2> GetLanguages()
         {
             return new List<OcrLanguage2>
@@ -551,6 +656,7 @@ namespace Nikse.SubtitleEdit.Logic.Ocr
                 new OcrLanguage2("bs", "Bosnian"),
                 new OcrLanguage2("bg", "Bulgarian"),
                 new OcrLanguage2("ch", "Chinese and English"),
+                new OcrLanguage2("che", "Chechen"),
                 new OcrLanguage2("chinese_cht", "Chinese traditional"),
                 new OcrLanguage2("hr", "Croatian"),
                 new OcrLanguage2("cs", "Czech"),
@@ -561,11 +667,21 @@ namespace Nikse.SubtitleEdit.Logic.Ocr
                 new OcrLanguage2("et", "Estonian"),
                 new OcrLanguage2("fr", "French"),
                 new OcrLanguage2("german", "German"),
+                new OcrLanguage2("gom", "Goan Konkani"),
+                new OcrLanguage2("bgc", "Haryanvi"),
+                new OcrLanguage2("hi", "Hindi"),
+                new OcrLanguage2("hu", "Hungarian"),
+                new OcrLanguage2("is", "Icelandic"),
+                new OcrLanguage2("id", "Indonesian"),
+                new OcrLanguage2("inh", "Ingush"),
+                new OcrLanguage2("ga", "Irish"),
+                new OcrLanguage2("it", "Italian"),
                 new OcrLanguage2("japan", "Japanese"),
                 new OcrLanguage2("kbd", "Kabardian"),
                 new OcrLanguage2("korean", "Korean"),
                 new OcrLanguage2("ku", "Kurdish"),
                 new OcrLanguage2("lbe", "Lak"),
+                new OcrLanguage2("la", "Latin"),
                 new OcrLanguage2("lv", "Latvian"),
                 new OcrLanguage2("lez", "Lezghian"),
                 new OcrLanguage2("lt", "Lithuanian"),
@@ -581,6 +697,7 @@ namespace Nikse.SubtitleEdit.Logic.Ocr
                 new OcrLanguage2("new", "Newari"),
                 new OcrLanguage2("no", "Norwegian"),
                 new OcrLanguage2("oc", "Occitan"),
+                new OcrLanguage2("pi", "Pali"),
                 new OcrLanguage2("fa", "Persian"),
                 new OcrLanguage2("pl", "Polish"),
                 new OcrLanguage2("pt", "Portuguese"),

@@ -2,7 +2,7 @@
 <Language Name="dansk">
   <General>
     <Title>Subtitle Edit</Title>
-    <Version>4.0.11</Version>
+    <Version>4.0.12</Version>
     <TranslatedBy>Oversat til dansk af Nikse (mailto:nikse.dk@gmail.com)</TranslatedBy>
     <CultureName>da-DK</CultureName>
     <HelpFile />
@@ -603,6 +603,15 @@ Vi udnytter billedets indre rytme.</CreateSimpleChainingToolTip>
     <OnlyLookForDifferencesInText>Vis kun forskelle i teksten</OnlyLookForDifferencesInText>
     <CannotCompareWithImageBasedSubtitles>Kan ikke sammenligne med billede baseret undertekster</CannotCompareWithImageBasedSubtitles>
   </CompareSubtitles>
+  <ConvertActor>
+    <Title>Konverter skuespillere</Title>
+    <ConvertActorFrom>Skift skuespiller fra</ConvertActorFrom>
+    <ConvertActorTo>Skift skuespiller til</ConvertActorTo>
+    <InlineActorViaX>Inline skuespiller via {0}</InlineActorViaX>
+    <NumberOfConversionsX>Antal skuespillerkonverteringer: {0}</NumberOfConversionsX>
+    <SetColor>Indstil farve</SetColor>
+    <OnlyNames>Kun navne</OnlyNames>
+  </ConvertActor>
   <ConvertColorsToDialog>
     <Title>Konverter farver til dialog</Title>
     <RemoveColorTags>Fjern farvemærker</RemoveColorTags>
@@ -1399,6 +1408,7 @@ Vi udnytter billedets indre rytme.</CreateSimpleChainingToolTip>
         <StartNumberingFrom>Begynd nummerering fra...</StartNumberingFrom>
         <RemoveTextForHearingImpaired>Fjern tekst for hørehæmmede...</RemoveTextForHearingImpaired>
         <ConvertColorsToDialog>Konverter farver til dialog...</ConvertColorsToDialog>
+        <ConvertActors>Konverter skuespillere...</ConvertActors>
         <ChangeCasing>Skift store/små bogstaver...</ChangeCasing>
         <ChangeFrameRate>Skift frame rate...</ChangeFrameRate>
         <ChangeSpeedInPercent>Ændr hastighed (procent)...</ChangeSpeedInPercent>
@@ -2471,6 +2481,9 @@ kan redigere i samme undertekst fil (fælles online projekt)</Information>
     <SpectrogramAppearance>Spektrogram udseende</SpectrogramAppearance>
     <SpectrogramOneColorGradient>Enkelt farve gradient</SpectrogramOneColorGradient>
     <SpectrogramClassic>Klassisk</SpectrogramClassic>
+    <SpectrogramHeat>Varme</SpectrogramHeat>
+    <SpectrogramCyanToOrange>Cyan til orange</SpectrogramCyanToOrange>
+    <SpectrogramWaveformOpacity>Spektrogram/bølgeform opacitet</SpectrogramWaveformOpacity>
     <WaveformUseFFmpeg>Benyt FFmpeg til at udtrække lydfiler</WaveformUseFFmpeg>
     <WaveformUseCenterChannelOnly>Brug kun forreste centerkanal (til 5.1/7.1)</WaveformUseCenterChannelOnly>
     <DownloadX>Download {0}</DownloadX>
@@ -3184,6 +3197,7 @@ Fortsæt?</RestoreDefaultSettingsMsg>
     <GeneratingSpeechFromTextXOfY>Genererer tale fra tekst: {0} / {1}...</GeneratingSpeechFromTextXOfY>
     <ReviewAudioClips>Gennemgå lydklip</ReviewAudioClips>
     <CustomAudioEncoding>Brugerdefineret lyd encoding</CustomAudioEncoding>
+    <UseVoiceOver>Brug Voice over</UseVoiceOver>
     <ReviewInfo>Gennemgå og rediger/fjern lydklip</ReviewInfo>
     <Play>Spil</Play>
     <AutoContinue>Auto-fortsæt</AutoContinue>

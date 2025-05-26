@@ -12,7 +12,7 @@ using Nikse.SubtitleEdit.Core.Settings;
 
 namespace Nikse.SubtitleEdit.Core.AutoTranslate
 {
-    public class DeepSeekTranslate : IAutoTranslator
+    public class DeepSeekTranslate : IAutoTranslator, IDisposable
     {
         private HttpClient _httpClient;
 
@@ -35,7 +35,7 @@ namespace Nikse.SubtitleEdit.Core.AutoTranslate
         public void Initialize()
         {
             _httpClient?.Dispose();
-            _httpClient = new HttpClient();
+            _httpClient = HttpClientFactoryWithProxy.CreateHttpClientWithProxy();
             _httpClient.DefaultRequestHeaders.TryAddWithoutValidation("Content-Type", "application/json");
             _httpClient.DefaultRequestHeaders.TryAddWithoutValidation("accept", "application/json");
             _httpClient.BaseAddress = new Uri(Configuration.Settings.Tools.DeepSeekUrl.TrimEnd('/'));
@@ -72,21 +72,35 @@ namespace Nikse.SubtitleEdit.Core.AutoTranslate
             }
             var prompt = string.Format(Configuration.Settings.Tools.DeepSeekPrompt, sourceLanguageCode, targetLanguageCode);
             var input = "{\"model\": \"" + model + "\",\"messages\": [{ \"role\": \"user\", \"content\": \"" + prompt + "\\n\\n" + Json.EncodeJsonText(text.Trim()) + "\" }]}";
-            var content = new StringContent(input, Encoding.UTF8);
-            content.Headers.ContentType = MediaTypeHeaderValue.Parse("application/json");
-            var result = await _httpClient.PostAsync(string.Empty, content, cancellationToken);
-            var bytes = await result.Content.ReadAsByteArrayAsync();
-            var json = Encoding.UTF8.GetString(bytes).Trim();
+
+            int[] retryDelays = { 2555, 5007, 9013 };
+            HttpResponseMessage result = null;
+            string resultContent = null;
+            for (var attempt = 0; attempt <= retryDelays.Length; attempt++)
+            {
+                var content = new StringContent(input, Encoding.UTF8);
+                content.Headers.ContentType = MediaTypeHeaderValue.Parse("application/json");
+                result = await _httpClient.PostAsync(string.Empty, content, cancellationToken);
+                resultContent = await result.Content.ReadAsStringAsync();
+
+                if (!DeepLTranslate.ShouldRetry(result, resultContent) || attempt == retryDelays.Length)
+                {
+                    break;
+                }
+
+                await Task.Delay(retryDelays[attempt], cancellationToken);
+            }
+
             if (!result.IsSuccessStatusCode)
             {
-                Error = json;
-                SeLogger.Error("DeepSeek Translate failed calling API: Status code=" + result.StatusCode + Environment.NewLine + json);
+                Error = resultContent;
+                SeLogger.Error("DeepSeek Translate failed calling API: Status code=" + result.StatusCode + Environment.NewLine + resultContent);
             }
 
             result.EnsureSuccessStatusCode();
 
             var parser = new SeJsonParser();
-            var resultText = parser.GetFirstObject(json, "content");
+            var resultText = parser.GetFirstObject(resultContent, "content");
             if (resultText == null)
             {
                 return string.Empty;
@@ -100,12 +114,18 @@ namespace Nikse.SubtitleEdit.Core.AutoTranslate
 
             outputText = ChatGptTranslate.FixNewLines(outputText);
             outputText = ChatGptTranslate.RemovePreamble(text, outputText);
+            outputText = ChatGptTranslate.DecodeUnicodeEscapes(outputText);
             return outputText.Trim();
         }
 
         public static List<TranslationPair> ListLanguages()
         {
             return ChatGptTranslate.ListLanguages();
+        }
+
+        public void Dispose()
+        {
+            _httpClient?.Dispose();
         }
     }
 }

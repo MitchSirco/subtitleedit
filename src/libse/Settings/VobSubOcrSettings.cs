@@ -43,6 +43,9 @@ namespace Nikse.SubtitleEdit.Core.Settings
         public string CloudVisionApiKey { get; set; }
         public string CloudVisionLanguage { get; set; }
         public bool CloudVisionSendOriginalImages { get; set; }
+        public string OllamaLanguage { get; set; }
+        public string OllamaModel { get; set; }
+
 
         public VobSubOcrSettings()
         {
@@ -69,7 +72,7 @@ namespace Nikse.SubtitleEdit.Core.Settings
             LastBinaryImageCompareDb = "Latin+Latin";
             BinaryAutoDetectBestDb = true;
             PaddleOcrLanguageCode = "en";
-            PaddleOcrUseGpu = false;
+            PaddleOcrUseGpu = true;
             CaptureTopAlign = false;
             UnfocusedAttentionBlinkCount = 50;
             UnfocusedAttentionPlaySoundCount = 1;

@@ -14,6 +14,7 @@ using Nikse.SubtitleEdit.Core.Forms;
 using System.Text.RegularExpressions;
 using System.IO;
 using System.Diagnostics;
+using System.Drawing.Imaging;
 
 namespace Nikse.SubtitleEdit.Controls
 {
@@ -76,6 +77,8 @@ namespace Nikse.SubtitleEdit.Controls
         }
 
         public int ClosenessForBorderSelection { get; set; } = 15;
+        public float SpectrogramAlpha { get; set; } = 1.0f;
+        public int WaveformAlpha { get; set; } = 255;
         private const int MinimumSelectionMilliseconds = 100;
 
         private long _buttonDownTimeTicks;
@@ -101,7 +104,6 @@ namespace Nikse.SubtitleEdit.Controls
         private double _gapAtStart = -1;
 
         private SpectrogramData _spectrogram;
-        private const int SpectrogramDisplayHeight = 128;
 
         // Karaoke Values
         private int _selectedLineIndex = -1;
@@ -582,7 +584,7 @@ namespace Nikse.SubtitleEdit.Controls
             {
                 var showSpectrogram = _showSpectrogram && IsSpectrogramAvailable;
                 var showSpectrogramOnly = showSpectrogram && !_showWaveform;
-                var waveformHeight = Height - (showSpectrogram ? SpectrogramDisplayHeight : 0);
+                var waveformHeight = Height;
 
                 // background
                 graphics.Clear(BackgroundColor);
@@ -596,14 +598,14 @@ namespace Nikse.SubtitleEdit.Controls
                 // spectrogram
                 if (showSpectrogram)
                 {
-                    DrawSpectrogram(graphics);
+                    DrawSpectrogram(graphics, waveformHeight);
                 }
 
                 // waveform
                 if (_showWaveform)
                 {
-                    using (var penNormal = new Pen(Color))
-                    using (var penSelected = new Pen(SelectedColor)) // selected paragraph
+                    using (var penNormal = new Pen(Color.FromArgb(this.WaveformAlpha, Color)))
+                    using (var penSelected = new Pen(Color.FromArgb(this.WaveformAlpha, SelectedColor))) // selected paragraph
                     {
                         var isSelectedHelper = new IsSelectedHelper(_allSelectedParagraphs, _wavePeaks.SampleRate);
                         var baseHeight = (int)(_wavePeaks.HighestPeak / _verticalZoomFactor);
@@ -2646,7 +2648,7 @@ namespace Nikse.SubtitleEdit.Controls
             Invalidate();
         }
 
-        private void DrawSpectrogram(Graphics graphics)
+        private void DrawSpectrogram(Graphics graphics, int height) // Add transparency parameter
         {
             var width = (int)Math.Round((EndPositionSeconds - _startPositionSeconds) / _spectrogram.SampleDuration);
             using (var bmpCombined = new Bitmap(width, _spectrogram.FftSize / 2))
@@ -2664,8 +2666,27 @@ namespace Nikse.SubtitleEdit.Controls
                     imageIndex++;
                 }
 
-                var displayHeight = _showWaveform ? SpectrogramDisplayHeight : Height;
-                graphics.DrawImage(bmpCombined, new Rectangle(0, Height - displayHeight, Width, displayHeight));
+                var destRect = new Rectangle(0, Height - height, Width, height);
+
+                // Create ImageAttributes
+                using (ImageAttributes imageAttributes = new ImageAttributes())
+                {
+                    // Create a color matrix for transparency
+                    float[][] colorMatrixElements = {
+                new float[] { 1, 0, 0, 0, 0 },
+                new float[] { 0, 1, 0, 0, 0 },
+                new float[] { 0, 0, 1, 0, 0 },
+                new float[] { 0, 0, 0, this.SpectrogramAlpha, 0 },
+                new float[] { 0, 0, 0, 0, 1 }
+            };
+                    ColorMatrix colorMatrix = new ColorMatrix(colorMatrixElements);
+
+                    // Set the color matrix in ImageAttributes
+                    imageAttributes.SetColorMatrix(colorMatrix, ColorMatrixFlag.Default, ColorAdjustType.Bitmap);
+
+                    // Draw the image with transparency
+                    graphics.DrawImage(bmpCombined, destRect, 0, 0, bmpCombined.Width, bmpCombined.Height, GraphicsUnit.Pixel, imageAttributes);
+                }
             }
         }
 

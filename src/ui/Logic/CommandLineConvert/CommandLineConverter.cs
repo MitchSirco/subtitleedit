@@ -75,7 +75,7 @@ namespace Nikse.SubtitleEdit.Logic.CommandLineConvert
                 {
                     action = Convert;
                 }
-                else if (firstArgument == "/help" || firstArgument == "-help" || firstArgument == "/?" || firstArgument == "-?")
+                else if (firstArgument == "-h" || firstArgument == "/help" || firstArgument == "-help" || firstArgument == "--help" || firstArgument == "/?" || firstArgument == "-?")
                 {
                     action = Help;
                 }
@@ -526,6 +526,7 @@ namespace Nikse.SubtitleEdit.Logic.CommandLineConvert
 
                 if (unconsumedArguments.Count > 0)
                 {
+                    errors++;
                     foreach (var argument in unconsumedArguments)
                     {
                         if (argument.StartsWith('/') || argument.StartsWith('-'))
@@ -606,7 +607,7 @@ namespace Nikse.SubtitleEdit.Logic.CommandLineConvert
                                                             var outputFileName = FormatOutputFileNameForBatchConvert(Utilities.GetPathAndFileNameWithoutExtension(newFileName) + Path.GetExtension(newFileName), ".sup", outputFolder, overwrite, targetFileName);
                                                             converted++;
                                                             _stdOutWriter?.Write($"{count}: {Path.GetFileName(fileName)} -> {outputFileName}...");
-                                                            BluRaySupToBluRaySup.ConvertFromBluRaySupToBluRaySup(outputFileName, bluRaySubtitles, resolution);
+                                                            BluRaySupToBluRaySup.ConvertFromBluRaySupToBluRaySup(outputFileName, bluRaySubtitles, resolution, forcedOnly);
                                                             _stdOutWriter?.WriteLine(" done.");
                                                         }
                                                         else
@@ -712,13 +713,15 @@ namespace Nikse.SubtitleEdit.Logic.CommandLineConvert
                                     }
                                     else
                                     {
-                                        _stdOutWriter.WriteLine($"No subtitle tracks in Matroska file '{fileName}'.");
+                                        errors++;
+                                        _stdOutWriter.WriteLine($"ERROR: No subtitle tracks in Matroska file '{fileName}'.");
                                         done = true;
                                     }
                                 }
                                 else
                                 {
-                                    _stdOutWriter.WriteLine($"Invalid Matroska file '{fileName}'!");
+                                    errors++;
+                                    _stdOutWriter.WriteLine($"ERROR: Invalid Matroska file '{fileName}'!");
                                     done = true;
                                 }
                             }
@@ -887,11 +890,13 @@ namespace Nikse.SubtitleEdit.Logic.CommandLineConvert
                         {
                             if (IsFileLengthOkForTextSubtitle(fileName, fileInfo))
                             {
-                                _stdOutWriter.WriteLine($"{fileName}: {targetFormat} - input file format unknown!");
+                                errors++;
+                                _stdOutWriter.WriteLine($"ERROR: {fileName}: {targetFormat} - input file format unknown!");
                             }
                             else
                             {
-                                _stdOutWriter.WriteLine($"{fileName}: {targetFormat} - input file too large!");
+                                errors++;
+                                _stdOutWriter.WriteLine($"ERROR: {fileName}: {targetFormat} - input file too large!");
                             }
                         }
                         else if (!done)
@@ -904,7 +909,7 @@ namespace Nikse.SubtitleEdit.Logic.CommandLineConvert
                     }
                     else
                     {
-                        _stdOutWriter.WriteLine($"{count}: {fileName} - file not found!");
+                        _stdOutWriter.WriteLine($"ERROR: {count}: {fileName} - file not found!");
                         errors++;
                     }
                 }
@@ -918,7 +923,7 @@ namespace Nikse.SubtitleEdit.Logic.CommandLineConvert
                 }
                 else
                 {
-                    _stdOutWriter.WriteLine("Try 'SubtitleEdit /?' or 'SubtitleEdit -?' for more information.");
+                    _stdOutWriter.WriteLine("ERROR: Try 'SubtitleEdit /?' or 'SubtitleEdit -?' for more information.");
                 }
                 _stdOutWriter.WriteLine();
                 errors++;
@@ -927,7 +932,7 @@ namespace Nikse.SubtitleEdit.Logic.CommandLineConvert
             if (count > 0)
             {
                 _stdOutWriter.WriteLine();
-                _stdOutWriter.WriteLine($"{converted} file(s) converted in {sw.Elapsed}");
+                _stdOutWriter.WriteLine($"{converted} file(s) converted in {sw.Elapsed.Hours:00}:{sw.Elapsed.Minutes:00}:{sw.Elapsed.Seconds:00}.{sw.Elapsed.Milliseconds:000}");
                 _stdOutWriter.WriteLine();
             }
 
@@ -985,10 +990,31 @@ namespace Nikse.SubtitleEdit.Logic.CommandLineConvert
         private static void ConvertBluRaySubtitle(string fileName, string targetFormat, TimeSpan offset, TextEncoding targetEncoding, string outputFolder, string targetFileName, int count, ref int converted, ref int errors, List<SubtitleFormat> formats, bool overwrite, int pacCodePage, double? targetFrameRate, ICollection<string> multipleReplaceImportFiles, List<string> actions, bool forcedOnly, string ocrEngine, string ocrDb, Point? resolution, int? renumber, double? adjustDurationMs)
         {
             var format = Utilities.GetSubtitleFormatByFriendlyName(targetFormat) ?? new SubRip();
-
             _stdOutWriter?.WriteLine($"Loading subtitles from file \"{fileName}\"");
             var log = new StringBuilder();
             var bluRaySubtitles = BluRaySupParser.ParseBluRaySup(fileName, log);
+
+            if (string.Equals(targetFormat.RemoveChar(' '), BatchConvert.BluRaySubtitle.RemoveChar(' '), StringComparison.InvariantCultureIgnoreCase) &&
+                actions.Count == 0)
+            {
+                // adjust offset
+                if (offset.Ticks != 0)
+                {
+                    foreach (var x in bluRaySubtitles)
+                    {
+                        x.StartTime += (long)Math.Round(offset.TotalMilliseconds * 90.0);
+                        x.EndTime += (long)Math.Round(offset.TotalMilliseconds * 90.0);
+                    }
+                }
+
+                var outputFileName = FormatOutputFileNameForBatchConvert(Utilities.GetPathAndFileNameWithoutExtension(fileName) + Path.GetExtension(fileName), ".sup", outputFolder, overwrite, targetFileName);
+                converted++;
+                _stdOutWriter?.Write($"{count}: {Path.GetFileName(fileName)} -> {outputFileName}...");
+                BluRaySupToBluRaySup.ConvertFromBluRaySupToBluRaySup(outputFileName, bluRaySubtitles, resolution, forcedOnly);
+                _stdOutWriter?.WriteLine(" done.");
+                return;
+            }
+
             Subtitle sub;
             using (var vobSubOcr = new VobSubOcr())
             {

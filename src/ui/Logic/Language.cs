@@ -43,6 +43,7 @@ namespace Nikse.SubtitleEdit.Logic
         public LanguageStructure.ColorChooser ColorChooser;
         public LanguageStructure.ColumnPaste ColumnPaste;
         public LanguageStructure.CompareSubtitles CompareSubtitles;
+        public LanguageStructure.ConvertActor ConvertActor;
         public LanguageStructure.ConvertColorsToDialog ConvertColorsToDialog;
         public LanguageStructure.DCinemaProperties DCinemaProperties;
         public LanguageStructure.DurationsBridgeGaps DurationsBridgeGaps;
@@ -824,6 +825,17 @@ namespace Nikse.SubtitleEdit.Logic
                 IgnoreFormatting = "Ignore formatting",
                 OnlyLookForDifferencesInText = "Only look for differences in text",
                 CannotCompareWithImageBasedSubtitles = "Cannot compare with image-based subtitles",
+            };
+
+            ConvertActor = new LanguageStructure.ConvertActor
+            {
+                Title = "Convert actors",
+                ConvertActorFrom = "Change actor from",
+                ConvertActorTo = "Change actor to",
+                InlineActorViaX = "Inline actor via {0}",
+                NumberOfConversionsX = "Number of actor conversions: {0}",
+                SetColor = "Set color",
+                OnlyNames = "Only names",
             };
 
             ConvertColorsToDialog = new LanguageStructure.ConvertColorsToDialog
@@ -1986,6 +1998,7 @@ namespace Nikse.SubtitleEdit.Logic
                         StartNumberingFrom = "Renumber...",
                         RemoveTextForHearingImpaired = "Remove text for hearing impaired...",
                         ConvertColorsToDialog = "Convert colors to dialog...",
+                        ConvertActors = "Convert actors...",
                         ChangeCasing = "Change casing...",
                         ChangeFrameRate = "Change frame rate...",
                         ChangeSpeedInPercent = "Changed speed (percent)...",
@@ -2844,6 +2857,9 @@ can edit in same subtitle file (collaboration)",
                 SpectrogramAppearance = "Spectrogram appearance",
                 SpectrogramOneColorGradient = "One color gradient",
                 SpectrogramClassic = "Classic",
+                SpectrogramHeat = "Heat",
+                SpectrogramCyanToOrange = "Cyan to orange",
+                SpectrogramWaveformOpacity = "Spectrogram/waveform opacity:",
                 WaveformUseFFmpeg = "Use FFmpeg for wave extraction",
                 WaveformUseCenterChannelOnly = "Use front center channel only (for 5.1/7.1)",
                 ExtractingX = "Extracting {0}",
@@ -3591,6 +3607,7 @@ can edit in same subtitle file (collaboration)",
                 ReviewAudioClips = "Review audio clips",
                 ReviewInfo = "Review and edit/remove audio clips",
                 CustomAudioEncoding = "Custom audio encoding",
+                UseVoiceOver = "Use voice over",
                 AutoContinue = "Auto-continue",
                 Play = "Play",
                 Regenerate = "Regenerate",

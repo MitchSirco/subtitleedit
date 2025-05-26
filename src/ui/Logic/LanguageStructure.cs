@@ -529,6 +529,17 @@
             public string GoToBookmark { get; set; }
         }
 
+        public class ConvertActor
+        {
+            public string Title { get; set; }
+            public string ConvertActorFrom { get; set; }
+            public string ConvertActorTo { get; set; }
+            public string InlineActorViaX { get; set; }
+            public string NumberOfConversionsX { get; set; }
+            public string SetColor { get; set; }
+            public string OnlyNames { get; set; }
+        }
+
         public class ChangeCasing
         {
             public string Title { get; set; }
@@ -1798,6 +1809,7 @@
                     public string StartNumberingFrom { get; set; }
                     public string RemoveTextForHearingImpaired { get; set; }
                     public string ConvertColorsToDialog { get; set; }
+                    public string ConvertActors { get; set; }
                     public string ChangeCasing { get; set; }
                     public string ChangeFrameRate { get; set; }
                     public string ChangeSpeedInPercent { get; set; }
@@ -2655,6 +2667,9 @@
             public string SpectrogramAppearance { get; set; }
             public string SpectrogramOneColorGradient { get; set; }
             public string SpectrogramClassic { get; set; }
+            public string SpectrogramHeat { get; set; }
+            public string SpectrogramCyanToOrange { get; set; }
+            public string SpectrogramWaveformOpacity { get; set; }
             public string WaveformUseFFmpeg { get; set; }
             public string WaveformUseCenterChannelOnly { get; set; }
             public string DownloadX { get; set; }
@@ -3401,6 +3416,7 @@
             public string GeneratingSpeechFromTextXOfY { get; set; }
             public string ReviewAudioClips { get; set; }
             public string CustomAudioEncoding { get; set; }
+            public string UseVoiceOver { get; set; }
             public string ReviewInfo { get; set; }
             public string Play { get; set; }
             public string AutoContinue { get; set; }

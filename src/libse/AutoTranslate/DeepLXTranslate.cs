@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Net;
 using System.Net.Http;
 using System.Text;
 using System.Threading;
@@ -14,10 +13,10 @@ namespace Nikse.SubtitleEdit.Core.AutoTranslate
     /// <summary>
     /// DeepLX translator - see https://github.com/OwO-Network/DeepLX
     /// </summary>
-    public class DeepLXTranslate : IAutoTranslator
+    public class DeepLXTranslate : IAutoTranslator, IDisposable
     {
         private string _apiUrl;
-        private HttpClient _client;
+        private HttpClient _httpClient;
 
         public static string StaticName { get; set; } = "DeepLX translate";
         public override string ToString() => StaticName;
@@ -34,8 +33,8 @@ namespace Nikse.SubtitleEdit.Core.AutoTranslate
             }
             _apiUrl = Configuration.Settings.Tools.AutoTranslateDeepLXUrl;
 
-            _client = new HttpClient();
-            _client.BaseAddress = new Uri(_apiUrl.Trim().TrimEnd('/'));
+            _httpClient = HttpClientFactoryWithProxy.CreateHttpClientWithProxy();
+            _httpClient.BaseAddress = new Uri(_apiUrl.Trim().TrimEnd('/'));
         }
 
         public List<TranslationPair> GetSupportedSourceLanguages()
@@ -48,84 +47,50 @@ namespace Nikse.SubtitleEdit.Core.AutoTranslate
             return new DeepLTranslate().GetSupportedTargetLanguages();
         }
 
-        public Task<string> Translate(string text, string sourceLanguageCode, string targetLanguageCode, CancellationToken cancellationToken)
+        public async Task<string> Translate(string text, string sourceLanguageCode, string targetLanguageCode, CancellationToken cancellationToken)
         {
-            const int httpStatusCodeTooManyRequests = 429;
+            int[] retryDelays = { 555, 3007, 7013 };
+            HttpResponseMessage result = null;
+            string resultContent = null;
+            for (var attempt = 0; attempt <= retryDelays.Length; attempt++)
+            {
+                var postContent = MakeContent(text, sourceLanguageCode, targetLanguageCode);
+                result = await _httpClient.PostAsync("/translate", postContent, cancellationToken);
+                resultContent = await result.Content.ReadAsStringAsync();
 
-            if (sourceLanguageCode.StartsWith("en", StringComparison.InvariantCultureIgnoreCase))
-            {
-                sourceLanguageCode = "en";
-            }
-            else if (sourceLanguageCode.StartsWith("pt", StringComparison.InvariantCultureIgnoreCase))
-            {
-                sourceLanguageCode = "pt";
-            }
-            else if (sourceLanguageCode.StartsWith("zh", StringComparison.InvariantCultureIgnoreCase))
-            {
-                sourceLanguageCode = "zh";
-            }
+                if (!DeepLTranslate.ShouldRetry(result, resultContent) || attempt == retryDelays.Length)
+                {
+                    break;
+                }
 
-            var postContent = MakeStringContent(text, sourceLanguageCode, targetLanguageCode);
-            var result = _client.PostAsync("/translate", postContent, cancellationToken).Result;
-            var resultContent = result.Content.ReadAsStringAsync().Result;
-
-            if (result.StatusCode == HttpStatusCode.ServiceUnavailable || (int)result.StatusCode == httpStatusCodeTooManyRequests)
-            {
-                Task.Delay(3755).Wait(cancellationToken);
-                postContent = MakeStringContent(text, sourceLanguageCode, targetLanguageCode);
-                result = _client.PostAsync("/translate", postContent, cancellationToken).Result;
-                resultContent = result.Content.ReadAsStringAsync().Result;
-            }
-
-            if (result.StatusCode == HttpStatusCode.ServiceUnavailable || (int)result.StatusCode == httpStatusCodeTooManyRequests)
-            {
-                Task.Delay(7555).Wait(cancellationToken);
-                postContent = MakeStringContent(text, sourceLanguageCode, targetLanguageCode);
-                result = _client.PostAsync("/translate", postContent, cancellationToken).Result;
-                resultContent = result.Content.ReadAsStringAsync().Result;
-            }
-
-            if (result.StatusCode == HttpStatusCode.ServiceUnavailable || (int)result.StatusCode == httpStatusCodeTooManyRequests)
-            {
-                Task.Delay(9555).Wait(cancellationToken);
-                postContent = MakeStringContent(text, sourceLanguageCode, targetLanguageCode);
-                result = _client.PostAsync("/translate", postContent, cancellationToken).Result;
-                resultContent = result.Content.ReadAsStringAsync().Result;
+                await Task.Delay(retryDelays[attempt], cancellationToken);
             }
 
             if (!result.IsSuccessStatusCode)
             {
-                SeLogger.Error("DeepLTranslate error: " + resultContent);
-            }
-
-            if (result.StatusCode == HttpStatusCode.Forbidden)
-            {
-                Error = resultContent;
-                throw new Exception("Forbidden! " + Environment.NewLine + Environment.NewLine + resultContent);
+                throw new Exception("DeepLXTranslate error: StatusCode=" + result.StatusCode + Environment.NewLine + resultContent);
             }
 
             try
             {
-                var resultList = new List<string>();
                 var parser = new SeJsonParser();
                 var alternatives = parser.GetArrayElementsByName(resultContent, "alternatives");
-                var data = parser.GetFirstObject(resultContent, "data");
-
-                if (data == null && alternatives.Count > 0 && alternatives[0] != null)
+                var data = string.Empty;
+                if (alternatives.Count > 0 && alternatives[0] != null)
                 {
                     data = alternatives[0];
                 }
 
                 if (!string.IsNullOrEmpty(data))
-                { 
+                {
                     var resultText = Json.DecodeJsonText(data);
                     var resultTextWithFixedNewLines = ChatGptTranslate.FixNewLines(resultText);
-                    return Task.FromResult(resultTextWithFixedNewLines.Trim());
+                    return resultTextWithFixedNewLines.Trim();
                 }
                 else
                 {
                     SeLogger.Error("DeepLXTranslate.Translate: " + resultContent);
-                    return Task.FromResult(string.Empty);
+                    throw new Exception("DeepLXTranslate gave empty alternatives: StatusCode=" + result.StatusCode + Environment.NewLine + resultContent);
                 }
             }
             catch (Exception ex)
@@ -135,11 +100,16 @@ namespace Nikse.SubtitleEdit.Core.AutoTranslate
             }
         }
 
-        private static StringContent MakeStringContent(string text, string sourceLanguageCode, string targetLanguageCode)
+        private static StringContent MakeContent(string text, string sourceLanguageCode, string targetLanguageCode)
         {
-            var input = "{ \"source_lang\": \"" + sourceLanguageCode + "\", \"target_lang\": \"" + targetLanguageCode + "\", \"text\": \"" + Json.EncodeJsonText(text.Trim()) + "\" }]}";
+            var input = "{ \"source_lang\": \"" + sourceLanguageCode + "\", \"target_lang\": \"" + targetLanguageCode + "\", \"text\": \"" + Json.EncodeJsonText(text.Trim(), "\\n") + "\" }]}";
             var content = new StringContent(input, Encoding.UTF8);
             return content;
+        }
+
+        public void Dispose()
+        {
+            _httpClient?.Dispose();
         }
     }
 }

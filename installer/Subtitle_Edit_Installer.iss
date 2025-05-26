@@ -98,7 +98,7 @@ UsePreviousLanguage=no
 
 DefaultDirName={pf}\{#app_name}
 DefaultGroupName={#app_name}
-MinVersion=6.0
+MinVersion=6.1
 LicenseFile=..\LICENSE.txt
 InfoAfterFile=..\Changelog.txt
 SetupIconFile=..\src\ui\Icons\SE.ico
@@ -261,6 +261,7 @@ Source: ..\Icons\vtt.ico;                          DestDir: {app}\Icons;        
 Source: ..\Icons\smi.ico;                          DestDir: {app}\Icons;                              Flags: ignoreversion onlyifdoesntexist; Components: main
 Source: ..\Icons\itt.ico;                          DestDir: {app}\Icons;                              Flags: ignoreversion onlyifdoesntexist; Components: main
 
+Source: ..\Icons\*.png;                            DestDir: {userappdata}\Subtitle Edit\Icons;              Flags: ignoreversion onlyifdoesntexist; Components: main
 Source: ..\Icons\DarkTheme\*.png;                  DestDir: {userappdata}\Subtitle Edit\Icons\DarkTheme;    Flags: ignoreversion onlyifdoesntexist; Components: main
 Source: ..\Icons\DefaultTheme\*.png;               DestDir: {userappdata}\Subtitle Edit\Icons\DefaultTheme; Flags: ignoreversion onlyifdoesntexist; Components: main
 Source: ..\Icons\Legacy\*.png;                     DestDir: {userappdata}\Subtitle Edit\Icons\Legacy;       Flags: ignoreversion onlyifdoesntexist; Components: main
@@ -322,8 +323,11 @@ Source: {#bindir}\NHunspell.dll;                   DestDir: {app};              
 Source: {#bindir}\UtfUnknown.dll;                  DestDir: {app};                                    Flags: ignoreversion; Components: main
 Source: {#bindir}\Vosk.dll;                        DestDir: {app};                                    Flags: ignoreversion; Components: main
 Source: {#bindir}\NCalc.dll;                       DestDir: {app};                                    Flags: ignoreversion; Components: main
+Source: {#bindir}\SkiaSharp.dll;                   DestDir: {app};                                    Flags: ignoreversion; Components: main
 Source: {#bindir}\x86\7zxa.dll;                    DestDir: {app}\x86;                                Flags: ignoreversion; Components: main
 Source: {#bindir}\x64\7zxa.dll;                    DestDir: {app}\x64;                                Flags: ignoreversion; Components: main
+Source: {#bindir}\x86\libSkiaSharp.dll;            DestDir: {app}\x86;                                Flags: ignoreversion; Components: main
+Source: {#bindir}\x64\libSkiaSharp.dll;            DestDir: {app}\x64;                                Flags: ignoreversion; Components: main
 Source: ..\src\ui\DLLs\Interop.QuartzTypeLib.dll;  DestDir: {app};                                    Flags: ignoreversion; Components: main
 Source: {#bindir}\Newtonsoft.Json.dll;             DestDir: {app};                                    Flags: ignoreversion; Components: main
 Source: {#bindir}\System.Net.Http.Extensions.dll;  DestDir: {app};                                    Flags: ignoreversion; Components: main
@@ -366,8 +370,11 @@ Type: files;      Name: {app}\NHunspell.dll;                          Check: IsU
 Type: files;      Name: {app}\UtfUnknown.dll;                         Check: IsUpgrade()
 Type: files;      Name: {app}\Vosk.dll;                               Check: IsUpgrade()
 Type: files;      Name: {app}\NCalc.dll;                              Check: IsUpgrade()
+Type: files;      Name: {app}\SkiaSharp.dll;                          Check: IsUpgrade()
 Type: files;      Name: {app}\x86\7zxa.dll;                           Check: IsUpgrade()
 Type: files;      Name: {app}\x64\7zxa.dll;                           Check: IsUpgrade()
+Type: files;      Name: {app}\x86\libSkiaSharp.dll;                   Check: IsUpgrade()
+Type: files;      Name: {app}\x64\libSkiaSharp.dll;                   Check: IsUpgrade()
 Type: files;      Name: {app}\System.Memory.dll;                      Check: IsUpgrade()
 Type: files;      Name: {app}\Interop.QuartzTypeLib.dll;              Check: IsUpgrade()
 Type: files;      Name: {app}\Newtonsoft.Json.dll;                    Check: IsUpgrade()

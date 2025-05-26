@@ -12,7 +12,7 @@ using System.Threading.Tasks;
 
 namespace Nikse.SubtitleEdit.Core.AutoTranslate
 {
-    public class SeamlessM4TTranslate : IAutoTranslator
+    public class SeamlessM4TTranslate : IAutoTranslator, IDisposable
     {
         private HttpClient _httpClient;
 
@@ -26,7 +26,7 @@ namespace Nikse.SubtitleEdit.Core.AutoTranslate
         public void Initialize()
         {
             _httpClient?.Dispose();
-            _httpClient = new HttpClient(); 
+            _httpClient = HttpClientFactoryWithProxy.CreateHttpClientWithProxy();
             _httpClient.DefaultRequestHeaders.TryAddWithoutValidation("Content-Type", "application/json");
             _httpClient.DefaultRequestHeaders.TryAddWithoutValidation("accept", "application/json");
             _httpClient.BaseAddress = new Uri(Configuration.Settings.Tools.AutoTranslateSeamlessM4TUrl.TrimEnd('/') + "/");
@@ -129,6 +129,11 @@ namespace Nikse.SubtitleEdit.Core.AutoTranslate
             }
 
             return result;
+        }
+
+        public void Dispose()
+        {
+            _httpClient?.Dispose();
         }
     }
 }

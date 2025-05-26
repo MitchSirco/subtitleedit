@@ -12,7 +12,7 @@ using Nikse.SubtitleEdit.Core.Settings;
 
 namespace Nikse.SubtitleEdit.Core.AutoTranslate
 {
-    public class OpenRouterTranslate : IAutoTranslator
+    public class OpenRouterTranslate : IAutoTranslator, IDisposable
     {
         private HttpClient _httpClient;
 
@@ -28,18 +28,21 @@ namespace Nikse.SubtitleEdit.Core.AutoTranslate
         /// </summary>
         public static string[] Models => new[]
         {
+            "google/gemini-flash-1.5-8b",
+            "google/gemini-2.0-flash-001",
             "deepseek/deepseek-r1",
-            "google/gemini-2.0-flash-thinking-exp:free",
+            "deepseek/deepseek-r1:free",
             "microsoft/phi-4",
+            "mistralai/mistral-nemo",
             "meta-llama/llama-3.3-70b-instruct",
-            "openai/gpt-4o-2024-11-20",
+            "openai/gpt-4o-mini",
             "anthropic/claude-3.5-sonnet",
         };
 
         public void Initialize()
         {
             _httpClient?.Dispose();
-            _httpClient = new HttpClient();
+            _httpClient = HttpClientFactoryWithProxy.CreateHttpClientWithProxy();
             _httpClient.DefaultRequestHeaders.TryAddWithoutValidation("Content-Type", "application/json");
             _httpClient.DefaultRequestHeaders.TryAddWithoutValidation("accept", "application/json");
             _httpClient.BaseAddress = new Uri(Configuration.Settings.Tools.OpenRouterUrl.TrimEnd('/'));
@@ -104,12 +107,18 @@ namespace Nikse.SubtitleEdit.Core.AutoTranslate
 
             outputText = ChatGptTranslate.FixNewLines(outputText);
             outputText = ChatGptTranslate.RemovePreamble(text, outputText);
+            outputText = ChatGptTranslate.DecodeUnicodeEscapes(outputText);
             return outputText.Trim();
         }
 
         public static List<TranslationPair> ListLanguages()
         {
             return ChatGptTranslate.ListLanguages();
+        }
+
+        public void Dispose()
+        {
+            _httpClient?.Dispose();
         }
     }
 }

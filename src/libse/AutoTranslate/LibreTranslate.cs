@@ -12,7 +12,7 @@ using System.Threading.Tasks;
 
 namespace Nikse.SubtitleEdit.Core.AutoTranslate
 {
-    public class LibreTranslate : IAutoTranslator
+    public class LibreTranslate : IAutoTranslator, IDisposable
     {
         private HttpClient _httpClient;
 
@@ -26,7 +26,7 @@ namespace Nikse.SubtitleEdit.Core.AutoTranslate
         public void Initialize()
         {
             _httpClient?.Dispose();
-            _httpClient = new HttpClient();
+            _httpClient = HttpClientFactoryWithProxy.CreateHttpClientWithProxy();
             _httpClient.DefaultRequestHeaders.TryAddWithoutValidation("Content-Type", "application/json");
             _httpClient.DefaultRequestHeaders.TryAddWithoutValidation("accept", "application/json");
             _httpClient.BaseAddress = new Uri(Configuration.Settings.Tools.AutoTranslateLibreUrl);
@@ -95,8 +95,6 @@ namespace Nikse.SubtitleEdit.Core.AutoTranslate
                 "bn",
                 "bg",
                 "ca",
-                "zh",
-                "zt",
                 "cs",
                 "da",
                 "nl",
@@ -122,6 +120,7 @@ namespace Nikse.SubtitleEdit.Core.AutoTranslate
                 "fa",
                 "pl",
                 "pt",
+                "pb",//"pt-BR",
                 "ro",
                 "ru",
                 "sr",
@@ -135,6 +134,9 @@ namespace Nikse.SubtitleEdit.Core.AutoTranslate
                 "ur",
                 "uk",
                 "vi",
+                "zh",
+                "zt", //"zh-Hant",
+                //"zh-Hans"
             };
 
             var result = new List<TranslationPair>();
@@ -142,13 +144,39 @@ namespace Nikse.SubtitleEdit.Core.AutoTranslate
             foreach (var code in languageCodes)
             {
                 var culture = cultures.FirstOrDefault(p => p.TwoLetterISOLanguageName == code);
-                if (culture != null)
+               
+                if (code == "pt-BR" || code == "pb")
+                {
+                    result.Add(new TranslationPair("Portuguese (Brazilian)", code, "pt"));
+                }
+                else if (code == "zh-Hant" || code == "zt")
+                {
+                    result.Add(new TranslationPair("Chinese (traditional)", code, "zh"));
+                }
+                else if (code == "zh-Hans" || code == "zh")
+                {
+                    result.Add(new TranslationPair("Chinese (Simplified)", code, "zh"));
+                }
+                else if (code == "tl")
+                {
+                    result.Add(new TranslationPair("Tagalog", code, code));
+                }
+                else if (culture != null)
                 {
                     result.Add(new TranslationPair(culture.EnglishName, code, code));
+                }
+                else
+                {
+                    result.Add(new TranslationPair(code, code, code));
                 }
             }
 
             return result;
+        }
+
+        public void Dispose()
+        {
+            _httpClient?.Dispose();
         }
     }
 }
