@@ -599,7 +599,6 @@ namespace Nikse.SubtitleEdit.Forms
                     }
                 }
 
-                comboBoxActors.Items.Add("test");
                 if (string.IsNullOrEmpty(_fileName))
                 {
                     EnableOrDisableEditControls();
