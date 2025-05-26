@@ -228,6 +228,7 @@ namespace Nikse.SubtitleEdit.Forms
 
         private bool AutoRepeatOn => tabControlModes.SelectedIndex == 0 && checkBoxAutoRepeatOn.Checked;
 
+        private PictureBox _miniatureViewPictureBox;
         public string Title
         {
             get
@@ -598,6 +599,7 @@ namespace Nikse.SubtitleEdit.Forms
                     }
                 }
 
+                comboBoxActors.Items.Add("test");
                 if (string.IsNullOrEmpty(_fileName))
                 {
                     EnableOrDisableEditControls();
@@ -655,6 +657,26 @@ namespace Nikse.SubtitleEdit.Forms
                 toolStripSelected.Text = string.Empty;
 
                 ListViewHelper.RestoreListViewDisplayIndices(SubtitleListview1);
+
+
+                // Initialize the miniature view panel
+                _miniatureViewPictureBox = new PictureBox
+                {
+                    Height = 7,
+                    BackColor = Color.Transparent, // Set the background color to be partially transparent
+                    Visible = true,
+                    Enabled = false
+                };
+                _miniatureViewPictureBox.Paint += MiniatureViewPanel_Paint;
+
+                // Overlay the miniature view panel on top of the timeline control
+                Controls.Add(_miniatureViewPictureBox);
+
+                // Handle the Resize event
+                this.Resize += Main_Resize;
+                this.ResizeEnd += Main_ResizeEnd;
+
+
             }
             catch (Exception exception)
             {
@@ -663,6 +685,88 @@ namespace Nikse.SubtitleEdit.Forms
                 SeLogger.Error(exception, "Main constructor");
             }
         }
+
+        private void UpdateMiniatureViewPanelPosition()
+        {
+            if (trackBarWaveformPosition != null)
+            {
+                Point trackBarLocation = trackBarWaveformPosition.PointToScreen(Point.Empty);
+                trackBarLocation = this.PointToClient(trackBarLocation);
+                _miniatureViewPictureBox.Location = new Point(trackBarLocation.X, trackBarLocation.Y);
+                _miniatureViewPictureBox.Size = new Size(trackBarWaveformPosition.Width, _miniatureViewPictureBox.Height);
+                _miniatureViewPictureBox.BringToFront();
+            }
+        }
+
+        private List<Rectangle> _cachedRectangles = new List<Rectangle>();
+
+
+        private void MiniatureViewPanel_Paint(object sender, PaintEventArgs e)
+        {
+            if (_subtitle == null || _subtitle.Paragraphs.Count == 0 || _videoInfo == null)
+            {
+                return;
+            }
+
+            var graphics = e.Graphics;
+            ///graphics.Clear(Color.Transparent);
+
+            lock (_cachedRectangles)
+            {
+                foreach (var rect in _cachedRectangles)
+                {
+                    graphics.FillRectangle(new SolidBrush(Color.FromArgb(0x21,0x41,0xa8)), rect);
+                }
+            }
+        }
+
+
+        private void UpdateMiniatureView()
+        {
+            if (_subtitle == null || _videoInfo == null)
+                return;
+
+            Task.Run(() =>
+            {
+                var panelWidth = _miniatureViewPictureBox.Width;
+                var panelHeight = _miniatureViewPictureBox.Height;
+                var totalDuration = _videoInfo.TotalSeconds;
+
+                double scalingFactor = trackBarWaveformPosition.Width / totalDuration;
+                var rectangles = new List<Rectangle>();
+
+                // **Thread-safe copy of Paragraphs**
+                List<Paragraph> paragraphs;
+                lock (_subtitle)
+                {
+                    paragraphs = new List<Paragraph>(_subtitle.Paragraphs);
+                }
+
+
+                foreach (var paragraph in paragraphs)
+                {
+                    if (scalingFactor == double.PositiveInfinity)
+                        continue;
+
+                    var startX = (int)(paragraph.StartTime.TotalSeconds * scalingFactor);
+                    var endX = (int)(paragraph.EndTime.TotalSeconds * scalingFactor);
+                    var width = endX - startX;
+
+                    rectangles.Add(new Rectangle(startX, 0, width, panelHeight));
+                }
+
+                // Store results safely and trigger repaint
+                _miniatureViewPictureBox.Invoke((MethodInvoker)(() =>
+                {
+                    lock (_cachedRectangles)
+                    {
+                        _cachedRectangles = rectangles;
+                    }
+                    _miniatureViewPictureBox.Invalidate(); // Triggers Paint event
+                }));
+            });
+        }
+
 
         private void AudioVisualizer_OnTextUpdated(object sender, ParagraphEventArgs e)
         {
@@ -826,7 +930,7 @@ namespace Nikse.SubtitleEdit.Forms
         private void AudioVisualizerPasteAtVideoPosition(object sender, EventArgs e)
         {
             double videoPositionInMilliseconds = mediaPlayer.CurrentPosition * TimeCode.BaseUnit;
-            if (_subtitle.GetFirstParagraphOrDefaultByTime(videoPositionInMilliseconds) == null)
+            if (_subtitle.GetFirstParagraphOrDefaultByTime(videoPositionInMilliseconds) == null || _subtitle.GetFirstParagraphOrDefaultByTime(videoPositionInMilliseconds).Actor == "disabled")
             {
                 PasteFromClipboard(videoPositionInMilliseconds);
             }
@@ -929,6 +1033,7 @@ namespace Nikse.SubtitleEdit.Forms
                         SubtitleListview1.SelectIndexAndEnsureVisible(0);
                     }
 
+                    _miniatureViewPictureBox.Invalidate();
                     RefreshSelectedParagraph();
                 }
             }
@@ -1662,6 +1767,9 @@ namespace Nikse.SubtitleEdit.Forms
 
         private void Main_Load(object sender, EventArgs e)
         {
+            _miniatureViewPictureBox.Location = new Point(trackBarWaveformPosition.Location.X, trackBarWaveformPosition.Location.Y - _miniatureViewPictureBox.Height);
+            _miniatureViewPictureBox.Width = trackBarWaveformPosition.Width;
+
             splitContainer1.Panel1MinSize = 525;
             splitContainer1.Panel2MinSize = 250;
             splitContainerMain.Panel1MinSize = 200;
@@ -1718,6 +1826,11 @@ namespace Nikse.SubtitleEdit.Forms
                 {
                     CenterToScreen();
                 }
+
+                // Position the miniature view panel over the timeline control
+                UpdateMiniatureView();
+                UpdateMiniatureViewPanelPosition();
+
             }
             else
             {
@@ -2675,6 +2788,9 @@ namespace Nikse.SubtitleEdit.Forms
         public void MakeHistoryForUndo(string description)
         {
             MakeHistoryForUndo(description, true);
+            if (_miniatureViewPictureBox != null)
+                _miniatureViewPictureBox.Invalidate();
+
         }
 
         /// <summary>
@@ -6844,7 +6960,7 @@ namespace Nikse.SubtitleEdit.Forms
                     }
                 }
 
-                //if ((_findHelper.SelectedPosition - 1 == tb.SelectionStart || _findHelper.SelectedPosition +1 == tb.SelectionStart) && 
+                //if ((_findHelper.SelectedPosition - 1 == tb.SelectionStart || _findHelper.SelectedPosition +1 == tb.SelectionStart) &&
                 //    tb.SelectionLength > 0 ||
                 //    _findHelper.FindText.Equals(tb.SelectedText, StringComparison.OrdinalIgnoreCase))
                 //{
@@ -8103,6 +8219,9 @@ namespace Nikse.SubtitleEdit.Forms
             }
 
             SubtitleListview1.SelectIndexAndEnsureVisible(0, true);
+            // Position the miniature view panel over the timeline control
+            UpdateMiniatureView();
+            _miniatureViewPictureBox.Invalidate();
         }
 
         private void RemoveTextForHearImpairedToolStripMenuItemClick(object sender, EventArgs e)
@@ -10720,7 +10839,9 @@ namespace Nikse.SubtitleEdit.Forms
                     SubtitleListview1.SelectIndexAndEnsureVisible(SubtitleListview1.Items.Count - 1, true);
                 }
             }
-
+            // Position the miniature view panel over the timeline control
+            UpdateMiniatureView();
+            _miniatureViewPictureBox.Invalidate();
             EnableOrDisableEditControls();
             SetListViewStateImages();
         }
@@ -17122,13 +17243,30 @@ namespace Nikse.SubtitleEdit.Forms
             else if (audioVisualizer.Visible && e.KeyData == _shortcuts.WaveformSplit)
             {
                 var pos = mediaPlayer.CurrentPosition;
+                var paragraphs = _subtitle.GetParagraphsOrDefaultByTime(pos * TimeCode.BaseUnit);
                 var paragraph = _subtitle.GetFirstParagraphOrDefaultByTime(pos * TimeCode.BaseUnit);
+                if (paragraphs != null)
+                {
+                    // disabled paragraph
+                    foreach (var paragraphh in paragraphs)
+                    {
+                        if (paragraphh.Actor == "disabled")
+                            continue;
+                        paragraph = paragraphh;
+                    }
+                }
+
                 if (paragraph != null &&
                     pos * TimeCode.BaseUnit + 100 > paragraph.StartTime.TotalMilliseconds &&
                     pos * TimeCode.BaseUnit - 100 < paragraph.EndTime.TotalMilliseconds)
                 {
-                    SubtitleListview1.SelectIndexAndEnsureVisible(paragraph);
-                    SplitSelectedParagraph(pos, null);
+                    // disabled paragraph
+                    if (paragraph.Actor != "disabled")
+                    {
+                        SubtitleListview1.SelectIndexAndEnsureVisible(paragraph);
+                        SplitSelectedParagraph(pos, null);
+                    }
+
                 }
 
                 e.SuppressKeyPress = true;
@@ -24335,7 +24473,7 @@ namespace Nikse.SubtitleEdit.Forms
                 var currentPosition = mediaPlayer.CurrentPosition;
                 int oldIndex = FirstSelectedIndex;
                 int index = ShowSubtitle();
-                if (index != -1 && oldIndex != index && checkBoxSyncListViewWithVideoWhilePlaying.Checked)
+                if (index != -1 && oldIndex != index && checkBoxSyncListViewWithVideoWhilePlaying.Checked && _subtitle.GetParagraphOrDefault(index).Actor != "disabled")
                 {
                     if ((Stopwatch.GetTimestamp() - _lastTextKeyDownTicks) > 10000 * 700) // only if last typed char was entered > 700 milliseconds
                     {
@@ -24758,17 +24896,22 @@ namespace Nikse.SubtitleEdit.Forms
             _textHeightResizeIgnoreUpdate = Stopwatch.GetTimestamp();
             SubtitleListview1.AutoSizeAllColumns(this);
 
+
             if (WindowState == FormWindowState.Maximized ||
                 WindowState == FormWindowState.Normal && _lastFormWindowState == FormWindowState.Maximized)
             {
                 TaskDelayHelper.RunDelayed(TimeSpan.FromMilliseconds(25), () =>
                 {
                     MainResize();
+                    // Update the size and position of the miniature view panel when the form is resized
+                    UpdateMiniatureView();
+                    UpdateMiniatureViewPanelPosition();
                     if (_textHeightResize >= 1)
                     {
                         try
                         {
                             splitContainerListViewAndText.SplitterDistance = splitContainerListViewAndText.Height - _textHeightResize;
+
                         }
                         catch
                         {
@@ -24804,6 +24947,10 @@ namespace Nikse.SubtitleEdit.Forms
             {
                 return;
             }
+
+            // Update the size and position of the miniature view panel when the form is resized
+            UpdateMiniatureView();
+            UpdateMiniatureViewPanelPosition();
 
             SuspendLayout();
             MainResize();
@@ -25303,6 +25450,9 @@ namespace Nikse.SubtitleEdit.Forms
             var tc = new TimeCode(videoPositionInMilliseconds);
 
             MakeHistoryForUndo(_language.BeforeInsertSubtitleAtVideoPosition + "  " + tc);
+            // Position the miniature view panel over the timeline control
+            UpdateMiniatureView();
+            _miniatureViewPictureBox.Invalidate();
             return InsertNewParagraphAtPosition(videoPositionInMilliseconds, maxDuration);
         }
 
@@ -25362,6 +25512,9 @@ namespace Nikse.SubtitleEdit.Forms
 
             SubtitleListview1.SelectIndexAndEnsureVisible(index, true);
             UpdateSourceView();
+            // Position the miniature view panel over the timeline control
+            UpdateMiniatureView();
+            _miniatureViewPictureBox.Invalidate();
             return newParagraph;
         }
 
@@ -28153,6 +28306,10 @@ namespace Nikse.SubtitleEdit.Forms
 
             ShowStatus(string.Format(_language.VideoControls.NewTextInsertAtX, newParagraph.StartTime.ToShortString()));
             audioVisualizer.Invalidate();
+            // Position the miniature view panel over the timeline control
+            UpdateMiniatureView();
+            _miniatureViewPictureBox.Invalidate();
+
         }
 
         private static bool HasSmallerStartTimes(Subtitle subtitle, int startIndex, double startMs)
@@ -28181,6 +28338,10 @@ namespace Nikse.SubtitleEdit.Forms
                 }
 
                 UpdateSourceView();
+                // Position the miniature view panel over the timeline control
+                UpdateMiniatureView();
+                _miniatureViewPictureBox.Invalidate();
+
             }
             else
             {
@@ -28208,7 +28369,9 @@ namespace Nikse.SubtitleEdit.Forms
                 SubtitleListview1.SelectIndexAndEnsureVisible(index, true);
                 ToolStripMenuItemDeleteClick(null, null);
             }
-
+            // Position the miniature view panel over the timeline control
+            UpdateMiniatureView();
+            _miniatureViewPictureBox.Invalidate();
             audioVisualizer.Invalidate();
         }
 

@@ -57,10 +57,23 @@ namespace Nikse.SubtitleEdit.Controls
                 Success = false;
             }
         }
+        // fixes AutoWordSelection not working
+        // https://stackoverflow.com/questions/3678620/c-sharp-richtextbox-selection-problem
+        protected override void OnHandleCreated(EventArgs e)
+        {
+            base.OnHandleCreated(e);
+            if (!base.AutoWordSelection)
+            {
+                base.AutoWordSelection = true;
+                base.AutoWordSelection = false;
+            }
+        }
 
         public AdvancedTextBox()
         {
             DetectUrls = false;
+            AutoWordSelection = false;
+            AllowDrop = true;
 
             SetTextPosInRtbIfCentered();
 
@@ -525,33 +538,7 @@ namespace Nikse.SubtitleEdit.Controls
         {
             if (m.Msg == WM_LBUTTONDBLCLK)
             {
-                var text = Text;
-                var posStart = SelectionStart;
-                if (posStart >= 0 && posStart < text.Length && char.IsLetterOrDigit(text[posStart]))
-                {
-                    var posEnd = posStart;
-                    while (posStart > 0 && char.IsLetterOrDigit(text[posStart - 1]))
-                    {
-                        posStart--;
-                    }
-
-                    while (posEnd < text.Length && char.IsLetterOrDigit(text[posEnd]))
-                    {
-                        posEnd++;
-                    }
-
-                    if (posEnd < text.Length && text[posEnd] == '\r')
-                    {
-                        posEnd++;
-                    }
-
-                    var length = posEnd - posStart;
-                    if (length > 0)
-                    {
-                        SelectionStart = posStart;
-                        SelectionLength = length;
-                    }
-                }
+                base.WndProc(ref m);
             }
             else
             {

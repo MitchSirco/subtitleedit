@@ -929,6 +929,22 @@ namespace Nikse.SubtitleEdit.Core.Common
             return null;
         }
 
+        public List<Paragraph> GetParagraphsOrDefaultByTime(double milliseconds)
+        {
+            List<Paragraph> paragraphs = new List<Paragraph>();
+            foreach (var p in Paragraphs)
+            {
+                if (p.StartTime.TotalMilliseconds < milliseconds && milliseconds < p.EndTime.TotalMilliseconds)
+                {
+                    paragraphs.Add(p);
+                }
+            }
+            if (paragraphs.Count >= 1)
+                return paragraphs;
+
+            return null;
+        }
+
         /// <summary>
         /// Fast hash code for subtitle - includes pre (encoding atm) + header + number + start + end + text + style + actor + extra.
         /// </summary>

@@ -141,7 +141,7 @@ namespace Nikse.SubtitleEdit.Controls
         public bool MouseWheelScrollUpIsForward { get; set; } = true;
 
         public const double ZoomMinimum = 0.1;
-        public const double ZoomMaximum = 2.5;
+        public const double ZoomMaximum = 3.5;
         private double _zoomFactor = 1.0; // 1.0=no zoom
 
         public int ShotChangeSnapPixels = 8;
@@ -442,6 +442,7 @@ namespace Nikse.SubtitleEdit.Controls
                 return;
             }
 
+
             const double additionalEndSeconds = 15.0; // Helps when scrolling
             const double additionalStartSeconds = 5.0; // This takes up too much real estate when trying to render things
 
@@ -460,6 +461,10 @@ namespace Nikse.SubtitleEdit.Controls
                 _subtitle.Paragraphs.Add(p);
                 if (p.EndTime.TotalMilliseconds >= startThresholdMilliseconds && p.StartTime.TotalMilliseconds <= endThresholdMilliseconds)
                 {
+                    //potential layering system
+                    if (p.Actor != null && p.Actor.ToLower() == "disabled")
+                        continue;
+
                     displayableParagraphs.Add(p);
                     if (displayableParagraphs.Count > 199) // Performance
                     {
@@ -1694,19 +1699,19 @@ namespace Nikse.SubtitleEdit.Controls
             return Math.Abs(mouseX - lineX) <= hitboxSize;
         }
 
-        private void AdjustKaraokeValues(Paragraph paragraph, int lineIndex, int deltaX, ref double accumulatedDelta)
+        private void AdjustKaraokeValues(Paragraph paragraph, int lineIndex, int deltaX, ref double accumulatedDelta, bool adjustFirstOnly = false)
         {
+
             if (Regex.IsMatch(paragraph.Text, @"^\{\s*[^}]*\\ytkt"))
             {
                 MatchCollection kValues = Regex.Matches(paragraph.Text, @"\\k(\d+)");
-                if (lineIndex < 0 || lineIndex >= kValues.Count - 1)
+                if (lineIndex < 0 || lineIndex >= kValues.Count)
                 {
                     return;
                 }
 
                 int firstKValue = Int32.Parse(kValues[lineIndex].Groups[1].Value);
-                int secondKValue = Int32.Parse(kValues[lineIndex + 1].Groups[1].Value);
-
+                int secondKValue = lineIndex < kValues.Count - 1 ? Int32.Parse(kValues[lineIndex + 1].Groups[1].Value) : 0;
                 // Convert deltaX to seconds and then to 10 ms units
                 double deltaSeconds = (double)deltaX / (_wavePeaks.SampleRate * _zoomFactor);
                 accumulatedDelta += deltaSeconds * 1000; // Convert seconds to milliseconds and accumulate
@@ -1717,27 +1722,62 @@ namespace Nikse.SubtitleEdit.Controls
                     int deltaK = (int)(accumulatedDelta / 10); // Convert milliseconds to 10 ms units
                     accumulatedDelta -= deltaK * 10; // Reduce accumulated delta by the applied amount
 
-                    // Adjust only the two relevant \k values
-                    firstKValue = Math.Max(0, firstKValue + deltaK);
-                    secondKValue = Math.Max(0, secondKValue - deltaK);
-                    if (firstKValue <= 1 || secondKValue <= 1)
+                    // Adjust the relevant \k values
+                    if (adjustFirstOnly)
                     {
-                        return;
+                        firstKValue = Math.Max(0, firstKValue + deltaK);
+                        if (firstKValue <= 1)
+                        {
+                            return;
+                        }
+                    }
+                    else
+                    {
+                        secondKValue = lineIndex < kValues.Count - 1 ? Int32.Parse(kValues[lineIndex + 1].Groups[1].Value) : 0;
+                        if (lineIndex < kValues.Count - 1)
+                        {
+                            firstKValue = Math.Max(0, firstKValue + deltaK);
+                            secondKValue = Math.Max(0, secondKValue - deltaK);
+                            if (firstKValue <= 1 || secondKValue <= 1)
+                            {
+                                return;
+                            }
+                        }
+                        else
+                        {
+                            firstKValue = Math.Max(0, firstKValue + deltaK);
+                            if (firstKValue <= 1)
+                            {
+                                return;
+                            }
+                        }
                     }
 
                     // Update the paragraph text with the new \k values
                     string newText = paragraph.Text;
-                    newText = newText.Substring(0, kValues[lineIndex].Index) +
-                              $"\\k{firstKValue}" +
-                              newText.Substring(kValues[lineIndex].Index + kValues[lineIndex].Length, kValues[lineIndex + 1].Index - (kValues[lineIndex].Index + kValues[lineIndex].Length)) +
-                              $"\\k{secondKValue}" +
-                              newText.Substring(kValues[lineIndex + 1].Index + kValues[lineIndex + 1].Length);
-
+                    if (lineIndex < kValues.Count - 1)
+                    {
+                        newText = newText.Substring(0, kValues[lineIndex].Index) +
+                                  $"\\k{firstKValue}" +
+                                  newText.Substring(kValues[lineIndex].Index + kValues[lineIndex].Length, kValues[lineIndex + 1].Index - (kValues[lineIndex].Index + kValues[lineIndex].Length)) +
+                                  $"\\k{secondKValue}" +
+                                  newText.Substring(kValues[lineIndex + 1].Index + kValues[lineIndex + 1].Length);
+                    }
+                    else
+                    {
+                        newText = newText.Substring(0, kValues[lineIndex].Index) +
+                                  $"\\k{firstKValue}" +
+                                  newText.Substring(kValues[lineIndex].Index + kValues[lineIndex].Length);
+                    }
                     paragraph.Text = newText;
 
 
                     // Raise the OnTextUpdated event
                     OnTextUpdated?.Invoke(this, new ParagraphEventArgs(paragraph));
+                }
+                else
+                {
+                    Console.WriteLine("fjksdlf");
                 }
             }
         }
@@ -1764,7 +1804,8 @@ namespace Nikse.SubtitleEdit.Controls
                 // Only adjust values if the direction has not changed or the cursor crosses the last valid position
                 if (!_directionChanged || (deltaX > 0 && e.X >= _lastValidMouseX) || (deltaX < 0 && e.X <= _lastValidMouseX))
                 {
-                    AdjustKaraokeValues(_selectedParagraph, _selectedLineIndex, deltaX, ref _accumulatedDelta);
+                    bool adjustFirstOnly = ((ModifierKeys & (Keys.Control | Keys.Alt)) == (Keys.Control | Keys.Alt)); // Check if the Shift key is held down
+                    AdjustKaraokeValues(_selectedParagraph, _selectedLineIndex, deltaX, ref _accumulatedDelta, adjustFirstOnly);
                     _lastValidMouseX = e.X; // Update the last valid mouse position
                     _directionChanged = false; // Reset the direction changed flag
                 }
